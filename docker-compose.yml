@@ -1,0 +1,59 @@
+services:
+    app:
+        build: .
+        ports:
+            - '8080:8080'
+        environment:
+            APP_ENV: local
+            APP_DEBUG: 'true'
+            APP_URL: http://localhost:8080
+            DB_CONNECTION: mysql
+            DB_HOST: db
+            DB_PORT: 3306
+            DB_DATABASE: cv_optimizer_ai
+            DB_USERNAME: cv_optimizer_ai
+            DB_PASSWORD: secret
+            QUEUE_CONNECTION: database
+            SESSION_DRIVER: database
+            CACHE_STORE: database
+        env_file:
+            - .env
+        depends_on:
+            db:
+                condition: service_healthy
+
+    queue:
+        build: .
+        command: php artisan queue:work --tries=3
+        environment:
+            APP_ENV: local
+            DB_CONNECTION: mysql
+            DB_HOST: db
+            DB_PORT: 3306
+            DB_DATABASE: cv_optimizer_ai
+            DB_USERNAME: cv_optimizer_ai
+            DB_PASSWORD: secret
+            QUEUE_CONNECTION: database
+        env_file:
+            - .env
+        depends_on:
+            db:
+                condition: service_healthy
+
+    db:
+        image: mysql:8
+        environment:
+            MYSQL_DATABASE: cv_optimizer_ai
+            MYSQL_USER: cv_optimizer_ai
+            MYSQL_PASSWORD: secret
+            MYSQL_ROOT_PASSWORD: secret
+        volumes:
+            - db-data:/var/lib/mysql
+        healthcheck:
+            test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+volumes:
+    db-data:
