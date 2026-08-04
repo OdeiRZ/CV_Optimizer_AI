@@ -1,18 +1,21 @@
 <?php
 
+use App\Http\Controllers\CvAnalysisController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+Route::get('/', [CvAnalysisController::class, 'create'])->name('cv-analyses.create');
+
+Route::post('/cv-analyses', [CvAnalysisController::class, 'store'])
+    ->middleware('throttle:cv-analysis')
+    ->name('cv-analyses.store');
+
+Route::get('/cv-analyses/{cvAnalysis}', [CvAnalysisController::class, 'show'])
+    ->name('cv-analyses.show');
+
+Route::get('/cv-analyses/{cvAnalysis}/status', [CvAnalysisController::class, 'status'])
+    ->name('cv-analyses.status');
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
