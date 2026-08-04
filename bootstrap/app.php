@@ -16,7 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        //
+        // Render (and similar PaaS platforms) terminate TLS at their own
+        // proxy and forward plain HTTP internally; without this, Laravel
+        // generates http:// asset/URL links behind an https:// page.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
