@@ -40,13 +40,13 @@ class CvAnalysisSchema
             properties: [
                 new NumberSchema('score', 'Overall CV quality / ATS-compatibility score, an integer from 0 to 100.'),
                 new StringSchema('summary', 'A two to three sentence overall assessment of the CV, in Spanish.'),
-                new ArraySchema('sections', 'Feedback broken down by section/aspect.', items: $section, minItems: 3, maxItems: 6),
+                new ArraySchema('sections', 'Feedback broken down by section/aspect. Provide between 3 and 6 items.', items: $section),
                 new ArraySchema(
                     'missing_keywords',
                     'Important keywords/skills from the job description that are missing from the CV. Empty array if no job description was provided.',
                     items: new StringSchema('keyword', 'A missing keyword or skill.'),
                 ),
-                new ArraySchema('bullet_rewrites', 'Rewritten versions of the 3 to 5 weakest bullet points found in the CV.', items: $bulletRewrite, minItems: 0, maxItems: 5),
+                new ArraySchema('bullet_rewrites', 'Rewritten versions of the 3 to 5 weakest bullet points found in the CV. Empty array if none are weak enough to warrant rewriting.', items: $bulletRewrite),
             ],
             requiredFields: ['score', 'summary', 'sections', 'missing_keywords', 'bullet_rewrites'],
         );
