@@ -1,9 +1,9 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "odeirz/cv-optimizer-ai",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "Analizador y optimizador de CVs con IA, construido con Laravel, Inertia/React y Prism.",
+    "keywords": ["laravel", "inertia", "react", "ai", "cv"],
     "license": "MIT",
     "require": {
         "php": "^8.2",
