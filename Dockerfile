@@ -6,7 +6,11 @@ FROM composer:2 AS vendor
 WORKDIR /app
 
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+# The composer:2 image doesn't have the PHP extensions the app requires
+# (gd, pdo_mysql, pdo_pgsql, ...) - those are installed in the final stage
+# below. Skip Composer's platform check here, since it would otherwise
+# fail against this intermediate image rather than the real runtime.
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --ignore-platform-reqs
 
 COPY . .
 RUN composer dump-autoload --optimize --no-dev
