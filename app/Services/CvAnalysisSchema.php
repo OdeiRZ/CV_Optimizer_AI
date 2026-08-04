@@ -38,7 +38,7 @@ class CvAnalysisSchema
             name: 'cv_analysis',
             description: 'Structured analysis of a CV, optionally matched against a target job description.',
             properties: [
-                new NumberSchema('score', 'Overall CV quality / ATS-compatibility score from 0 to 100.', minimum: 0, maximum: 100),
+                new NumberSchema('score', 'Overall CV quality / ATS-compatibility score, an integer from 0 to 100.'),
                 new StringSchema('summary', 'A two to three sentence overall assessment of the CV, in Spanish.'),
                 new ArraySchema('sections', 'Feedback broken down by section/aspect.', items: $section, minItems: 3, maxItems: 6),
                 new ArraySchema(
