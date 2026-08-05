@@ -6,7 +6,7 @@ Analizador y optimizador de CVs con IA: sube tu currículum (y opcionalmente la 
 
 **Demo en vivo:** [cv-optimizer-ai-gedo.onrender.com](https://cv-optimizer-ai-gedo.onrender.com)
 
-> El servicio está en el plan gratuito de Render: si lleva un rato inactivo, la primera petición puede tardar ~50s en despertar el contenedor. La base de datos gratuita de Render expira periódicamente; si la demo da error de conexión, es probable que necesite reprovisionarse.
+> El servicio está en el plan gratuito de Render: si lleva un rato inactivo, la primera petición puede tardar ~50s en despertar el contenedor.
 
 ## Características
 
@@ -86,6 +86,7 @@ La suite mockea el proveedor LLM (`Prism::fake()`), por lo que no realiza llamad
 La demo en vivo corre en el plan gratuito de [Render](https://render.com) mediante el `Dockerfile` incluido (build multi-stage: `composer:2` → `node:20-alpine` → `php:8.3-cli-alpine`, sirviendo con `php artisan serve` en vez de php-fpm + nginx para mantenerlo en un único contenedor). Notas si quieres replicar el despliegue:
 
 - El tier gratuito de Render no soporta *Background Workers*, así que producción usa `QUEUE_CONNECTION=sync` (el análisis se ejecuta en el propio request, sin cola) en vez del `database` + `queue:work` de desarrollo.
+- Producción usa `DB_CONNECTION=sqlite` en lugar de un Postgres/MySQL gestionado: el Postgres gratuito de Render caduca a los 30 días y se borra si no se pasa a un plan de pago, mientras que SQLite vive en el propio contenedor sin fecha de expiración. El `entrypoint.sh` crea el fichero `database.sqlite` si no existe antes de migrar. Contrapartida: al ser el filesystem del contenedor efímero, el histórico de análisis y las sesiones se reinician en cada redeploy o reinicio — aceptable para una demo pública (y mejor para la privacidad, al no acumular indefinidamente los CVs subidos por terceros).
 - Como Render termina TLS en su proxy y reenvía por HTTP plano al contenedor, es imprescindible `$middleware->trustProxies(at: '*')` en `bootstrap/app.php`; sin esto, Laravel genera URLs de assets en `http://` bajo una página `https://` y el navegador las bloquea.
 - `LOG_CHANNEL=stderr` para que las excepciones aparezcan en el visor de logs de Render (que solo captura stdout/stderr, no ficheros).
 - GitHub Actions (`.github/workflows/tests.yml`) ejecuta la suite completa en cada push a `main`.
