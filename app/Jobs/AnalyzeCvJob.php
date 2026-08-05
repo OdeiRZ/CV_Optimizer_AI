@@ -36,9 +36,10 @@ class AnalyzeCvJob implements ShouldQueue
                 ->withSchema(CvAnalysisSchema::make())
                 ->withPrompt($this->buildPrompt($cvText, $this->analysis->job_description))
                 ->withMaxTokens(4096)
-                // Low temperature: the score should stay reasonably reproducible for the
-                // same CV across separate analyses, not swing wildly run to run.
-                ->usingTemperature(0.2)
+                // Lowest available temperature: the score should stay as reproducible as
+                // possible for the same CV across separate analyses. This reduces but does
+                // not eliminate run-to-run variation (see the README caveat on this).
+                ->usingTemperature(0)
                 ->asStructured();
 
             $this->analysis->update([

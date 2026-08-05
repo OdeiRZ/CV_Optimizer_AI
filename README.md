@@ -18,6 +18,8 @@ Analizador y optimizador de CVs con IA: sube tu currículum (y opcionalmente la 
 - Procesamiento síncrono en producción (`QUEUE_CONNECTION=sync`) para no depender de un worker persistente en hosting gratuito; procesamiento asíncrono en cola con polling en desarrollo local (`QUEUE_CONNECTION=database`).
 - Límite de uso diario por usuario/IP en el endpoint que llama al LLM, para controlar el coste de una demo pública.
 
+> **Nota sobre la puntuación:** el análisis lo genera un LLM, no una fórmula fija — es un juicio, no un cálculo determinista. Analizar el mismo CV varias veces puede dar puntuaciones ligeramente distintas cada vez. El proyecto llama a la API con `temperature: 0` (la configuración más determinista disponible) para minimizar esa variación, pero no puede eliminarla del todo; no es un bug si dos ejecuciones sobre el mismo CV no coinciden exactamente.
+
 ## Tecnologías
 
 - Laravel 12 + Inertia.js + React 18 + TypeScript
