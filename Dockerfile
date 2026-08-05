@@ -35,7 +35,7 @@ FROM php:8.3-cli-alpine AS app
 WORKDIR /var/www/html
 
 RUN apk add --no-cache \
-        libpng-dev libjpeg-turbo-dev freetype-dev libzip-dev oniguruma-dev \
+        libpng-dev libjpeg-turbo-dev freetype-dev libzip-dev oniguruma-dev sqlite-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" pdo_mysql pdo_sqlite mbstring bcmath gd zip exif pcntl
 
