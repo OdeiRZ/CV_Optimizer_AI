@@ -50,7 +50,9 @@ class CvTextExtractor
             $text .= $this->extractFromContainer($section);
         }
 
-        return $text;
+        // PhpWord returns text nodes with their XML entities (e.g. &#039;)
+        // left un-decoded, since Text::getText() reads the raw <w:t> content.
+        return html_entity_decode($text, ENT_QUOTES | ENT_HTML5);
     }
 
     protected function extractFromContainer(AbstractContainer $container): string
