@@ -12,6 +12,11 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 - Informe descargable en PDF del resultado de un análisis completado (puntuación,
   feedback por sección, palabras clave ausentes y puntos reescritos), vía
   `barryvdh/laravel-dompdf`.
+- Soporte de español/inglés: selector de idioma en la página de subida que controla
+  tanto la interfaz como el idioma en el que el LLM devuelve el feedback. El idioma
+  queda fijado por análisis (columna `language`), así que una URL de resultado
+  compartida siempre se renderiza en el idioma en que se generó, independientemente
+  del selector del visitante. El informe en PDF respeta el mismo idioma.
 
 ### Cambiado
 
