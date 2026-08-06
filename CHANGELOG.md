@@ -42,6 +42,14 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   misma petición, y su relanzamiento de la excepción (pensado para que un worker de
   cola real pueda reintentarlo) escapaba de la petición HTTP antes de llegar al
   redirect. Encontrado probando el selector de idioma en vivo.
+- El límite de 10 análisis diarios no bloqueaba nunca: 11 peticiones reales seguidas
+  en producción se procesaron todas. Render sirve la app detrás de Cloudflare, y con
+  `trustProxies(at: '*')` (necesario para que Laravel detecte bien HTTPS) toda la
+  cadena de proxies queda marcada como confiable, así que `$request->ip()` no tiene
+  ningún salto "no confiable" en el que anclarse y termina devolviendo la IP interna
+  del balanceador de Render — que además no es estable entre peticiones, por lo que el
+  contador por IP nunca superaba 1 para el mismo visitante. Ahora se usa la cabecera
+  `CF-Connecting-IP` de Cloudflare, que sí lleva la IP real del visitante.
 
 ### Documentado
 
