@@ -7,6 +7,12 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### Añadido
+
+- Informe descargable en PDF del resultado de un análisis completado (puntuación,
+  feedback por sección, palabras clave ausentes y puntos reescritos), vía
+  `barryvdh/laravel-dompdf`.
+
 ### Cambiado
 
 - La base de datos de producción pasa de PostgreSQL a SQLite. El plan gratuito de

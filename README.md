@@ -15,6 +15,7 @@ Analizador y optimizador de CVs con IA: sube tu currículum (y opcionalmente la 
 - Análisis por IA con salida estructurada: puntuación 0-100, resumen, feedback por sección (formato, experiencia, palabras clave) con nivel de severidad.
 - Coincidencia opcional contra una oferta de trabajo: detecta palabras clave importantes ausentes en el CV.
 - Reescritura de las líneas de experiencia más débiles del CV (voz pasiva o sin métricas) a una versión más fuerte, con justificación de cada cambio.
+- Informe descargable en PDF con el resultado completo del análisis.
 - Funciona con CVs en cualquier idioma (probado en español e inglés); el feedback se devuelve siempre en español.
 - Procesamiento síncrono en producción (`QUEUE_CONNECTION=sync`) para no depender de un worker persistente en hosting gratuito; procesamiento asíncrono en cola con polling en desarrollo local (`QUEUE_CONNECTION=database`).
 - Límite de uso diario por usuario/IP en el endpoint que llama al LLM, para controlar el coste de una demo pública.
@@ -27,6 +28,7 @@ Analizador y optimizador de CVs con IA: sube tu currículum (y opcionalmente la 
 - Tailwind CSS v4
 - [Prism PHP](https://prismphp.com/) para la integración con el LLM (Anthropic Claude por defecto, proveedor intercambiable vía configuración)
 - `smalot/pdfparser` y `phpoffice/phpword` para extraer texto de PDF y DOCX
+- `barryvdh/laravel-dompdf` para generar el informe descargable en PDF
 - SQLite (desarrollo y producción)
 - Pest para los tests (backend mockeando el proveedor LLM con el fake de Prism)
 - Docker + GitHub Actions
