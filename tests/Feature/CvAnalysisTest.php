@@ -51,6 +51,21 @@ it('stores the upload and dispatches the analysis job', function () {
     Bus::assertDispatched(AnalyzeCvJob::class, fn (AnalyzeCvJob $job) => $job->analysis->is($analysis));
 });
 
+it('shows a friendly session error instead of a raw 429 once the daily limit is hit', function () {
+    Storage::fake('local');
+    Bus::fake();
+
+    foreach (range(1, 10) as $_) {
+        $this->post(route('cv-analyses.store'), ['cv' => fakeCvUpload()])
+            ->assertRedirect();
+    }
+
+    $response = $this->post(route('cv-analyses.store'), ['cv' => fakeCvUpload()]);
+
+    $response->assertSessionHasErrors('cv');
+    Bus::assertDispatchedTimes(AnalyzeCvJob::class, 10);
+});
+
 it('completes the analysis and stores the structured result when the job runs', function () {
     Storage::fake('local');
 
