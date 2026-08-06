@@ -17,6 +17,7 @@ Analizador y optimizador de CVs con IA: sube tu currículum (y opcionalmente la 
 - Reescritura de las líneas de experiencia más débiles del CV (voz pasiva o sin métricas) a una versión más fuerte, con justificación de cada cambio.
 - Informe descargable en PDF con el resultado completo del análisis.
 - Funciona con CVs en cualquier idioma (probado en español e inglés); interfaz y feedback disponibles en español o inglés (selector en la página de subida).
+- Selector de tema claro/oscuro (oscuro por defecto), con la preferencia guardada en el navegador.
 - Procesamiento síncrono en producción (`QUEUE_CONNECTION=sync`) para no depender de un worker persistente en hosting gratuito; procesamiento asíncrono en cola con polling en desarrollo local (`QUEUE_CONNECTION=database`).
 - Límite de uso diario por usuario/IP en el endpoint que llama al LLM, para controlar el coste de una demo pública.
 

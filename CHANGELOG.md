@@ -17,6 +17,8 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   queda fijado por análisis (columna `language`), así que una URL de resultado
   compartida siempre se renderiza en el idioma en que se generó, independientemente
   del selector del visitante. El informe en PDF respeta el mismo idioma.
+- Selector de tema claro/oscuro en las páginas de subida y resultado, con la
+  preferencia guardada en el navegador. Oscuro sigue siendo el valor por defecto.
 
 ### Cambiado
 
