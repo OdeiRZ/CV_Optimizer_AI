@@ -6,10 +6,13 @@ use App\Enums\CvAnalysisStatus;
 use App\Http\Requests\StoreCvAnalysisRequest;
 use App\Jobs\AnalyzeCvJob;
 use App\Models\CvAnalysis;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response as HttpResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class CvAnalysisController extends Controller
 {
@@ -46,6 +49,20 @@ class CvAnalysisController extends Controller
     public function status(CvAnalysis $cvAnalysis): JsonResponse
     {
         return response()->json($this->toPayload($cvAnalysis));
+    }
+
+    public function downloadReport(CvAnalysis $cvAnalysis): HttpResponse
+    {
+        if ($cvAnalysis->status !== CvAnalysisStatus::Completed || ! $cvAnalysis->result) {
+            throw new NotFoundHttpException;
+        }
+
+        $pdf = Pdf::loadView('cv-analyses.report', [
+            'analysis' => $cvAnalysis,
+            'result' => $cvAnalysis->result,
+        ]);
+
+        return $pdf->download("analisis-cv-{$cvAnalysis->id}.pdf");
     }
 
     /**

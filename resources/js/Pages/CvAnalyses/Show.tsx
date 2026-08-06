@@ -94,6 +94,12 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                                 <p className="mt-4 max-w-xl text-slate-300">
                                     {analysis.result.summary}
                                 </p>
+                                <a
+                                    href={route('cv-analyses.report', analysis.id)}
+                                    className="mt-6 inline-flex items-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-600 hover:bg-slate-800"
+                                >
+                                    Descargar informe (PDF)
+                                </a>
                             </div>
 
                             <div className="space-y-3">

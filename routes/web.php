@@ -17,6 +17,9 @@ Route::get('/cv-analyses/{cvAnalysis}', [CvAnalysisController::class, 'show'])
 Route::get('/cv-analyses/{cvAnalysis}/status', [CvAnalysisController::class, 'status'])
     ->name('cv-analyses.status');
 
+Route::get('/cv-analyses/{cvAnalysis}/report', [CvAnalysisController::class, 'downloadReport'])
+    ->name('cv-analyses.report');
+
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');

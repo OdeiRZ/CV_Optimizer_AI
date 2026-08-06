@@ -169,6 +169,40 @@ it('returns the analysis status as json', function () {
         ]);
 });
 
+it('downloads a pdf report for a completed analysis', function () {
+    $analysis = CvAnalysis::create([
+        'original_filename' => 'cv.pdf',
+        'file_path' => 'cv-uploads/fake.pdf',
+        'status' => CvAnalysisStatus::Completed,
+        'result' => [
+            'score' => 80,
+            'summary' => 'CV sólido.',
+            'sections' => [
+                ['name' => 'Formato', 'severity' => 'ok', 'feedback' => 'Estructura clara.'],
+            ],
+            'missing_keywords' => ['Docker'],
+            'bullet_rewrites' => [
+                ['original' => 'Antes', 'improved' => 'Después', 'reason' => 'Motivo'],
+            ],
+        ],
+    ]);
+
+    $response = $this->get(route('cv-analyses.report', $analysis));
+
+    $response->assertOk();
+    expect($response->headers->get('Content-Type'))->toBe('application/pdf');
+});
+
+it('returns 404 for a report of an analysis that is not completed', function () {
+    $analysis = CvAnalysis::create([
+        'original_filename' => 'cv.pdf',
+        'file_path' => 'cv-uploads/fake.pdf',
+        'status' => CvAnalysisStatus::Pending,
+    ]);
+
+    $this->get(route('cv-analyses.report', $analysis))->assertNotFound();
+});
+
 it('builds a schema with the expected top-level fields', function () {
     $schema = CvAnalysisSchema::make()->toArray();
 
