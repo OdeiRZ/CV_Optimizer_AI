@@ -32,21 +32,32 @@ class AppServiceProvider extends ServiceProvider
         // withErrors() reuses the same `errors.cv` slot the upload form
         // already renders for validation errors.
         RateLimiter::for('cv-analysis', function (Request $request) {
-            \Illuminate\Support\Facades\Log::info('rate-limit-debug', [
-                'ip' => $request->ip(),
-                'ips' => $request->ips(),
-                'xff' => $request->header('X-Forwarded-For'),
-                'cf_connecting_ip' => $request->header('CF-Connecting-IP'),
-                'true_client_ip' => $request->header('True-Client-IP'),
-            ]);
-
             return Limit::perDay(10)
-                ->by($request->user()?->id ?: $request->ip())
+                ->by($request->user()?->id ?: $this->clientIp($request))
                 ->response(function (Request $request, array $headers) {
                     return back()->withErrors([
                         'cv' => 'Has alcanzado el límite de 10 análisis diarios. Inténtalo de nuevo mañana.',
                     ])->withHeaders($headers);
                 });
         });
+    }
+
+    /**
+     * Render sits behind Cloudflare, so a request reaching the app has
+     * already passed through Cloudflare's edge and Render's own internal
+     * load balancer. With trustProxies(at: '*') (needed elsewhere for
+     * correct HTTPS scheme detection - see bootstrap/app.php), every hop
+     * in that chain is trusted, which leaves Symfony's client-IP
+     * resolution with no "untrusted" hop to anchor on: $request->ip()
+     * ends up returning Render's own internal load-balancer address
+     * instead of the visitor's IP - and that address isn't even stable
+     * request-to-request, which was silently defeating this rate limiter
+     * (confirmed live: 11 consecutive requests, zero blocked). Cloudflare
+     * sets CF-Connecting-IP to the real visitor IP regardless of proxy
+     * trust config, so prefer that when present.
+     */
+    protected function clientIp(Request $request): ?string
+    {
+        return $request->header('CF-Connecting-IP') ?: $request->ip();
     }
 }

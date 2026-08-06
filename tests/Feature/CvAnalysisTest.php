@@ -118,6 +118,32 @@ it('shows a friendly session error instead of a raw 429 once the daily limit is 
     Bus::assertDispatchedTimes(AnalyzeCvJob::class, 10);
 });
 
+it('rate-limits by the Cloudflare connecting IP even when the resolved request IP is unstable', function () {
+    // Live testing found that behind Render + Cloudflare, $request->ip()
+    // resolves to Render's own internal load-balancer address rather than
+    // the visitor's IP, and that address isn't even stable request-to-
+    // request - which silently defeated this limiter entirely (11
+    // consecutive live requests, zero blocked). Simulate that instability
+    // via a different REMOTE_ADDR on every request, alongside a constant
+    // CF-Connecting-IP: the limiter must still trip on the 11th request.
+    Storage::fake('local');
+    Bus::fake();
+
+    foreach (range(1, 10) as $i) {
+        $this->withServerVariables(['REMOTE_ADDR' => "10.0.0.{$i}"])
+            ->withHeaders(['CF-Connecting-IP' => '84.127.128.30'])
+            ->post(route('cv-analyses.store'), ['cv' => fakeCvUpload()])
+            ->assertRedirect();
+    }
+
+    $response = $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.11'])
+        ->withHeaders(['CF-Connecting-IP' => '84.127.128.30'])
+        ->post(route('cv-analyses.store'), ['cv' => fakeCvUpload()]);
+
+    $response->assertSessionHasErrors('cv');
+    Bus::assertDispatchedTimes(AnalyzeCvJob::class, 10);
+});
+
 it('completes the analysis and stores the structured result when the job runs', function () {
     Storage::fake('local');
 
