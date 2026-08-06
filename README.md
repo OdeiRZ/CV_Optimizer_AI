@@ -95,12 +95,13 @@ La demo en vivo corre en el plan gratuito de [Render](https://render.com) median
 - El tier gratuito de Render no soporta *Background Workers*, así que producción usa `QUEUE_CONNECTION=sync` (el análisis se ejecuta en el propio request, sin cola) en vez del `database` + `queue:work` de desarrollo.
 - Producción usa `DB_CONNECTION=sqlite` en lugar de un Postgres/MySQL gestionado: el Postgres gratuito de Render caduca a los 30 días y se borra si no se pasa a un plan de pago, mientras que SQLite vive en el propio contenedor sin fecha de expiración. El `entrypoint.sh` crea el fichero `database.sqlite` si no existe antes de migrar. Contrapartida: al ser el filesystem del contenedor efímero, el histórico de análisis y las sesiones se reinician en cada redeploy o reinicio — aceptable para una demo pública (y mejor para la privacidad, al no acumular indefinidamente los CVs subidos por terceros).
 - Como Render termina TLS en su proxy y reenvía por HTTP plano al contenedor, es imprescindible `$middleware->trustProxies(at: '*')` en `bootstrap/app.php`; sin esto, Laravel genera URLs de assets en `http://` bajo una página `https://` y el navegador las bloquea.
+- Esa misma confianza total en los proxies (`at: '*'`) tiene una contrapartida: la app corre detrás de Cloudflare además del proxy interno de Render, y con todos los saltos marcados como confiables, `$request->ip()` deja de identificar al visitante real y devuelve la IP interna del balanceador de Render (que ni siquiera es estable entre peticiones). Esto invalidaba en silencio el límite diario por IP — 11 peticiones reales seguidas se procesaron sin bloquear ninguna antes de detectarlo. La cabecera `CF-Connecting-IP` de Cloudflare sí lleva la IP real del visitante, así que el limitador la usa como fuente primaria (ver `App\Providers\AppServiceProvider`).
 - `LOG_CHANNEL=stderr` para que las excepciones aparezcan en el visor de logs de Render (que solo captura stdout/stderr, no ficheros).
 - GitHub Actions (`.github/workflows/tests.yml`) ejecuta la suite completa en cada push a `main`.
 
 ## Seguridad
 
-- El endpoint que dispara el análisis (llamada de pago al LLM) está limitado a 10 peticiones al día por usuario o IP.
+- El endpoint que dispara el análisis (llamada de pago al LLM) está limitado a 10 peticiones al día por usuario o IP (identificando la IP real vía Cloudflare, no vía `$request->ip()` — ver [Despliegue](#despliegue)).
 - Los CVs subidos se guardan en almacenamiento privado (`storage/app/private`), no accesible públicamente.
 - La clave de la API del LLM se configura por variable de entorno, nunca en el código.
 - El schema de salida estructurada que se envía a Anthropic evita restricciones no soportadas por su validador (p. ej. `minimum`/`maximum` en campos numéricos, `minItems`/`maxItems` fuera de `{0, 1}` en arrays) para que el análisis nunca falle por un detalle de formato del proveedor.
