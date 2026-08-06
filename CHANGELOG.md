@@ -20,6 +20,9 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 ### Corregido
 
 - Build de Docker: faltaba `sqlite-dev` para poder compilar la extensión `pdo_sqlite`.
+- El límite de 10 análisis diarios devolvía una respuesta 429 en crudo que el frontend
+  no sabía renderizar: la subida parecía no hacer nada. Ahora se muestra como un error
+  legible reutilizando el mismo hueco de errores de validación del formulario.
 
 ### Documentado
 
