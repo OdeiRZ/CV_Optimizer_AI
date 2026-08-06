@@ -34,6 +34,12 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 - El límite de 10 análisis diarios devolvía una respuesta 429 en crudo que el frontend
   no sabía renderizar: la subida parecía no hacer nada. Ahora se muestra como un error
   legible reutilizando el mismo hueco de errores de validación del formulario.
+- Un fallo durante el análisis (p. ej. un timeout de la API de Anthropic) producía un
+  500 en crudo en lugar de la página de resultado con el mensaje de error ya previsto
+  para ese caso: en producción (`QUEUE_CONNECTION=sync`) el job se ejecuta dentro de la
+  misma petición, y su relanzamiento de la excepción (pensado para que un worker de
+  cola real pueda reintentarlo) escapaba de la petición HTTP antes de llegar al
+  redirect. Encontrado probando el selector de idioma en vivo.
 
 ### Documentado
 
