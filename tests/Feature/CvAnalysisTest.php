@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\CvAnalysisLanguage;
 use App\Enums\CvAnalysisStatus;
 use App\Jobs\AnalyzeCvJob;
 use App\Models\CvAnalysis;
@@ -42,13 +43,37 @@ it('stores the upload and dispatches the analysis job', function () {
 
     expect($analysis->status)->toBe(CvAnalysisStatus::Pending)
         ->and($analysis->job_description)->toBe('Senior Laravel Developer, 5+ years, REST APIs.')
-        ->and($analysis->original_filename)->toBe('cv.pdf');
+        ->and($analysis->original_filename)->toBe('cv.pdf')
+        ->and($analysis->language)->toBe(CvAnalysisLanguage::Spanish);
 
     Storage::disk('local')->assertExists($analysis->file_path);
 
     $response->assertRedirect(route('cv-analyses.show', $analysis));
 
     Bus::assertDispatched(AnalyzeCvJob::class, fn (AnalyzeCvJob $job) => $job->analysis->is($analysis));
+});
+
+it('stores the requested response language', function () {
+    Storage::fake('local');
+    Bus::fake();
+
+    $this->post(route('cv-analyses.store'), [
+        'cv' => fakeCvUpload(),
+        'language' => 'en',
+    ]);
+
+    expect(CvAnalysis::sole()->language)->toBe(CvAnalysisLanguage::English);
+});
+
+it('rejects an unsupported language value', function () {
+    Storage::fake('local');
+
+    $response = $this->post(route('cv-analyses.store'), [
+        'cv' => fakeCvUpload(),
+        'language' => 'fr',
+    ]);
+
+    $response->assertSessionHasErrors('language');
 });
 
 it('shows a friendly session error instead of a raw 429 once the daily limit is hit', function () {
@@ -209,4 +234,36 @@ it('builds a schema with the expected top-level fields', function () {
     expect($schema['properties'])->toHaveKeys([
         'score', 'summary', 'sections', 'missing_keywords', 'bullet_rewrites',
     ]);
+});
+
+it('builds a schema that asks for output in the requested language', function () {
+    $spanish = CvAnalysisSchema::make(CvAnalysisLanguage::Spanish)->toArray();
+    $english = CvAnalysisSchema::make(CvAnalysisLanguage::English)->toArray();
+
+    expect($spanish['properties']['summary']['description'])->toContain('Spanish')
+        ->and($english['properties']['summary']['description'])->toContain('English');
+});
+
+it('downloads an english pdf report when the analysis language is english', function () {
+    $analysis = CvAnalysis::create([
+        'original_filename' => 'cv.pdf',
+        'file_path' => 'cv-uploads/fake.pdf',
+        'status' => CvAnalysisStatus::Completed,
+        'language' => CvAnalysisLanguage::English,
+        'result' => [
+            'score' => 80,
+            'summary' => 'Solid CV.',
+            'sections' => [
+                ['name' => 'Format', 'severity' => 'ok', 'feedback' => 'Clear structure.'],
+            ],
+            'missing_keywords' => ['Docker'],
+            'bullet_rewrites' => [
+                ['original' => 'Before', 'improved' => 'After', 'reason' => 'Reason'],
+            ],
+        ],
+    ]);
+
+    $this->get(route('cv-analyses.report', $analysis))
+        ->assertOk()
+        ->assertHeader('Content-Type', 'application/pdf');
 });

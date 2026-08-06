@@ -1,18 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import axios from 'axios';
+import { useLanguage } from '@/lib/i18n';
 import { CvAnalysis, CvAnalysisSeverity } from '@/types/cv';
 
 const severityStyles: Record<CvAnalysisSeverity, string> = {
     critico: 'bg-red-500/10 text-red-400 ring-red-500/30',
     mejorable: 'bg-amber-500/10 text-amber-400 ring-amber-500/30',
     ok: 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/30',
-};
-
-const severityLabels: Record<CvAnalysisSeverity, string> = {
-    critico: 'Crítico',
-    mejorable: 'Mejorable',
-    ok: 'Correcto',
 };
 
 function scoreColor(score: number): string {
@@ -23,6 +18,7 @@ function scoreColor(score: number): string {
 
 export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
     const [analysis, setAnalysis] = useState(initial);
+    const { t } = useLanguage(initial.language);
 
     useEffect(() => {
         if (analysis.status !== 'pending' && analysis.status !== 'processing') {
@@ -41,7 +37,7 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
 
     return (
         <>
-            <Head title="Resultado del análisis" />
+            <Head title={t.headTitleShow} />
 
             <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
                 <div className="mx-auto max-w-3xl px-6 py-16">
@@ -49,7 +45,7 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                         href={route('cv-analyses.create')}
                         className="mb-8 inline-block text-sm text-slate-500 hover:text-slate-300"
                     >
-                        ← Analizar otro CV
+                        {t.backLink}
                     </Link>
 
                     {(analysis.status === 'pending' ||
@@ -57,10 +53,10 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                         <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/60 py-24 text-center">
                             <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-700 border-t-emerald-400" />
                             <p className="mt-6 font-medium text-slate-200">
-                                Analizando {analysis.original_filename}...
+                                {t.analyzing(analysis.original_filename)}
                             </p>
                             <p className="mt-1 text-sm text-slate-500">
-                                Esto suele tardar unos segundos.
+                                {t.analyzingSubtext}
                             </p>
                         </div>
                     )}
@@ -68,14 +64,13 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                     {analysis.status === 'failed' && (
                         <div className="rounded-2xl border border-red-900/50 bg-red-950/30 p-8 text-center">
                             <p className="font-medium text-red-300">
-                                {analysis.error_message ??
-                                    'No se ha podido analizar el CV.'}
+                                {analysis.error_message ?? t.genericError}
                             </p>
                             <Link
                                 href={route('cv-analyses.create')}
                                 className="mt-4 inline-block rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700"
                             >
-                                Volver a intentarlo
+                                {t.retry}
                             </Link>
                         </div>
                     )}
@@ -89,7 +84,7 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                                     {analysis.result.score}
                                 </span>
                                 <span className="mt-1 text-sm text-slate-500">
-                                    Puntuación sobre 100
+                                    {t.scoreLabel}
                                 </span>
                                 <p className="mt-4 max-w-xl text-slate-300">
                                     {analysis.result.summary}
@@ -98,13 +93,13 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                                     href={route('cv-analyses.report', analysis.id)}
                                     className="mt-6 inline-flex items-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-600 hover:bg-slate-800"
                                 >
-                                    Descargar informe (PDF)
+                                    {t.downloadPdf}
                                 </a>
                             </div>
 
                             <div className="space-y-3">
                                 <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-                                    Feedback por sección
+                                    {t.sectionsHeading}
                                 </h2>
                                 {analysis.result.sections.map((section) => (
                                     <div
@@ -118,7 +113,7 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                                             <span
                                                 className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${severityStyles[section.severity]}`}
                                             >
-                                                {severityLabels[section.severity]}
+                                                {t.severity[section.severity]}
                                             </span>
                                         </div>
                                         <p className="text-sm text-slate-400">
@@ -131,7 +126,7 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                             {analysis.result.missing_keywords.length > 0 && (
                                 <div className="space-y-3">
                                     <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-                                        Palabras clave ausentes
+                                        {t.missingKeywordsHeading}
                                     </h2>
                                     <div className="flex flex-wrap gap-2">
                                         {analysis.result.missing_keywords.map(
@@ -151,7 +146,7 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                             {analysis.result.bullet_rewrites.length > 0 && (
                                 <div className="space-y-3">
                                     <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-                                        Puntos reescritos
+                                        {t.rewritesHeading}
                                     </h2>
                                     {analysis.result.bullet_rewrites.map(
                                         (rewrite, index) => (

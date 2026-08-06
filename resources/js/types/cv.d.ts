@@ -26,10 +26,13 @@ export type CvAnalysisStatusValue =
     | 'completed'
     | 'failed';
 
+export type CvAnalysisLanguage = 'es' | 'en';
+
 export interface CvAnalysis {
     id: string;
     status: CvAnalysisStatusValue;
     original_filename: string;
+    language: CvAnalysisLanguage;
     result: CvAnalysisResult | null;
     error_message: string | null;
 }

@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\CvAnalysisLanguage;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Enum;
 
 class StoreCvAnalysisRequest extends FormRequest
 {
@@ -24,6 +26,7 @@ class StoreCvAnalysisRequest extends FormRequest
                 'max:'.config('cv.max_upload_kb'),
             ],
             'job_description' => ['nullable', 'string', 'max:10000'],
+            'language' => ['nullable', new Enum(CvAnalysisLanguage::class)],
         ];
     }
 }

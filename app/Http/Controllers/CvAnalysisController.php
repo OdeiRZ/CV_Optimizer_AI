@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CvAnalysisLanguage;
 use App\Enums\CvAnalysisStatus;
 use App\Http\Requests\StoreCvAnalysisRequest;
 use App\Jobs\AnalyzeCvJob;
@@ -31,6 +32,7 @@ class CvAnalysisController extends Controller
             'original_filename' => $file->getClientOriginalName(),
             'file_path' => $path,
             'job_description' => $request->validated('job_description'),
+            'language' => $request->validated('language') ?? CvAnalysisLanguage::Spanish->value,
             'status' => CvAnalysisStatus::Pending,
         ]);
 
@@ -74,6 +76,7 @@ class CvAnalysisController extends Controller
             'id' => $cvAnalysis->id,
             'status' => $cvAnalysis->status->value,
             'original_filename' => $cvAnalysis->original_filename,
+            'language' => $cvAnalysis->language->value,
             'result' => $cvAnalysis->result,
             'error_message' => $cvAnalysis->error_message,
         ];

@@ -1,13 +1,19 @@
 import { FormEventHandler, useRef, useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
+import { useLanguage } from '@/lib/i18n';
+import { CvAnalysisLanguage } from '@/types/cv';
 
 export default function Create() {
+    const { language, setLanguage, t } = useLanguage();
+
     const { data, setData, post, processing, progress, errors } = useForm<{
         cv: File | null;
         job_description: string;
+        language: CvAnalysisLanguage;
     }>({
         cv: null,
         job_description: '',
+        language,
     });
 
     const [isDragging, setIsDragging] = useState(false);
@@ -16,6 +22,11 @@ export default function Create() {
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         post(route('cv-analyses.store'), { forceFormData: true });
+    };
+
+    const selectLanguage = (next: CvAnalysisLanguage) => {
+        setLanguage(next);
+        setData('language', next);
     };
 
     const handleFiles = (files: FileList | null) => {
@@ -27,22 +38,38 @@ export default function Create() {
 
     return (
         <>
-            <Head title="Analizador de CV con IA" />
+            <Head title={t.headTitleCreate} />
 
             <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
                 <div className="mx-auto max-w-3xl px-6 py-16">
+                    <div className="mb-8 flex justify-center">
+                        <div className="inline-flex rounded-lg border border-slate-800 bg-slate-900/60 p-1 text-xs font-medium">
+                            {(['es', 'en'] as const).map((option) => (
+                                <button
+                                    key={option}
+                                    type="button"
+                                    onClick={() => selectLanguage(option)}
+                                    className={`rounded-md px-3 py-1.5 transition ${
+                                        language === option
+                                            ? 'bg-emerald-500 text-slate-950'
+                                            : 'text-slate-400 hover:text-slate-200'
+                                    }`}
+                                >
+                                    {option === 'es' ? 'Español' : 'English'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <header className="mb-12 text-center">
                         <p className="mb-3 inline-flex items-center rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400">
-                            Impulsado por IA
+                            {t.badge}
                         </p>
                         <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-                            Optimiza tu CV en segundos
+                            {t.heading}
                         </h1>
                         <p className="mx-auto mt-4 max-w-xl text-slate-400">
-                            Sube tu CV y, opcionalmente, la oferta a la que
-                            aspiras. Recibe una puntuación tipo ATS, feedback
-                            accionable y reescrituras de tus puntos más
-                            débiles.
+                            {t.subheading}
                         </p>
                     </header>
 
@@ -83,11 +110,10 @@ export default function Create() {
                             ) : (
                                 <>
                                     <p className="font-medium text-slate-200">
-                                        Arrastra tu CV aquí o haz clic para
-                                        subirlo
+                                        {t.dropzoneHint}
                                     </p>
                                     <p className="mt-1 text-sm text-slate-500">
-                                        PDF o DOCX, máx. 5&nbsp;MB
+                                        {t.dropzoneSubHint}
                                     </p>
                                 </>
                             )}
@@ -103,7 +129,7 @@ export default function Create() {
                                 htmlFor="job_description"
                                 className="mb-2 block text-sm font-medium text-slate-300"
                             >
-                                Oferta de trabajo (opcional)
+                                {t.jobDescriptionLabel}
                             </label>
                             <textarea
                                 id="job_description"
@@ -112,7 +138,7 @@ export default function Create() {
                                 onChange={(e) =>
                                     setData('job_description', e.target.value)
                                 }
-                                placeholder="Pega aquí la descripción del puesto para recibir un análisis de compatibilidad y palabras clave ausentes."
+                                placeholder={t.jobDescriptionPlaceholder}
                                 className="w-full rounded-lg border-slate-700 bg-slate-950/60 text-sm text-slate-100 placeholder:text-slate-600 focus:border-emerald-500 focus:ring-emerald-500"
                             />
                             {errors.job_description && (
@@ -136,12 +162,12 @@ export default function Create() {
                             disabled={processing || !data.cv}
                             className="mt-8 w-full rounded-lg bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                            {processing ? 'Subiendo...' : 'Analizar mi CV'}
+                            {processing ? t.submitting : t.submit}
                         </button>
                     </form>
 
                     <p className="mt-8 text-center text-xs text-slate-600">
-                        Tu CV se usa únicamente para generar este análisis.
+                        {t.privacyNote}
                     </p>
                 </div>
             </div>

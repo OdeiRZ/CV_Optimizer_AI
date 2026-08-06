@@ -33,7 +33,7 @@ class AnalyzeCvJob implements ShouldQueue
 
             $response = Prism::structured()
                 ->using(config('cv.analysis_provider'), config('cv.analysis_model'))
-                ->withSchema(CvAnalysisSchema::make())
+                ->withSchema(CvAnalysisSchema::make($this->analysis->language))
                 ->withPrompt($this->buildPrompt($cvText, $this->analysis->job_description))
                 ->withMaxTokens(4096)
                 // Lowest available temperature: the score should stay as reproducible as
@@ -63,38 +63,40 @@ class AnalyzeCvJob implements ShouldQueue
 
     protected function buildPrompt(string $cvText, ?string $jobDescription): string
     {
+        $languageName = $this->analysis->language->label();
+
         $prompt = <<<PROMPT
-            Eres un experto en recursos humanos y en sistemas ATS (Applicant Tracking System).
-            Analiza el siguiente CV y devuelve una evaluación honesta, concreta y accionable, siempre en español.
+            You are an expert in human resources and ATS (Applicant Tracking System) systems.
+            Analyze the following CV and return an honest, concrete and actionable evaluation, always written in {$languageName}.
 
             CV:
             ---
             {$cvText}
             ---
 
-            Evalúa el formato y estructura, la claridad de la experiencia (impacto cuantificado, verbos de acción
-            fuertes frente a frases pasivas o genéricas como "responsable de"), y la compatibilidad con sistemas ATS
-            (uso de palabras clave relevantes para el sector, estructura que un ATS pueda parsear correctamente).
+            Evaluate the format and structure, the clarity of the experience (quantified impact, strong action verbs
+            versus passive or generic phrases like "responsible for"), and ATS compatibility (use of keywords
+            relevant to the industry, structure that an ATS can parse correctly).
 
-            Identifica entre 3 y 5 de las líneas de experiencia más débiles del CV y reescríbelas de forma más fuerte
-            (voz activa, resultados cuantificados cuando sea razonable inferirlos o marcados como estimables).
+            Identify between 3 and 5 of the weakest experience bullet points in the CV and rewrite them to be
+            stronger (active voice, quantified results where reasonable to infer or marked as estimated).
             PROMPT;
 
         if (filled($jobDescription)) {
             $prompt .= <<<PROMPT
 
 
-                El candidato aspira a la siguiente oferta de trabajo. Ten en cuenta sus requisitos al evaluar el CV
-                y usa este campo para identificar palabras clave o habilidades importantes de la oferta que no
-                aparecen en el CV.
+                The candidate is applying to the following job posting. Take its requirements into account when
+                evaluating the CV, and use it to identify important keywords or skills from the posting that are
+                missing from the CV.
 
-                Oferta de trabajo:
+                Job posting:
                 ---
                 {$jobDescription}
                 ---
                 PROMPT;
         } else {
-            $prompt .= "\n\nNo se ha proporcionado ninguna oferta de trabajo: deja el campo de palabras clave ausentes como un array vacío.";
+            $prompt .= "\n\nNo job posting was provided: leave the missing keywords field as an empty array.";
         }
 
         return $prompt;

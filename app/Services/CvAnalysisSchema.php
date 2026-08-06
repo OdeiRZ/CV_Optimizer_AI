@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\CvAnalysisLanguage;
 use Prism\Prism\Schema\ArraySchema;
 use Prism\Prism\Schema\EnumSchema;
 use Prism\Prism\Schema\NumberSchema;
@@ -10,15 +11,17 @@ use Prism\Prism\Schema\StringSchema;
 
 class CvAnalysisSchema
 {
-    public static function make(): ObjectSchema
+    public static function make(CvAnalysisLanguage $language = CvAnalysisLanguage::Spanish): ObjectSchema
     {
+        $languageName = $language->label();
+
         $section = new ObjectSchema(
             name: 'section',
             description: 'Feedback on one aspect of the CV.',
             properties: [
-                new StringSchema('name', 'Short name of the section being reviewed, e.g. Formato, Experiencia, Palabras clave.'),
+                new StringSchema('name', "Short name of the section being reviewed, e.g. Format, Experience, Keywords, written in {$languageName}."),
                 new EnumSchema('severity', 'How important this feedback is.', ['critico', 'mejorable', 'ok']),
-                new StringSchema('feedback', 'One or two sentences of concrete feedback, written in Spanish.'),
+                new StringSchema('feedback', "One or two sentences of concrete feedback, written in {$languageName}."),
             ],
             requiredFields: ['name', 'severity', 'feedback'],
         );
@@ -29,7 +32,7 @@ class CvAnalysisSchema
             properties: [
                 new StringSchema('original', 'The original bullet point text, copied verbatim from the CV.'),
                 new StringSchema('improved', 'A rewritten, stronger version: active voice, quantified impact where possible.'),
-                new StringSchema('reason', 'One short sentence explaining what was weak about the original, in Spanish.'),
+                new StringSchema('reason', "One short sentence explaining what was weak about the original, in {$languageName}."),
             ],
             requiredFields: ['original', 'improved', 'reason'],
         );
@@ -39,7 +42,7 @@ class CvAnalysisSchema
             description: 'Structured analysis of a CV, optionally matched against a target job description.',
             properties: [
                 new NumberSchema('score', 'Overall CV quality / ATS-compatibility score, an integer from 0 to 100.'),
-                new StringSchema('summary', 'A two to three sentence overall assessment of the CV, in Spanish.'),
+                new StringSchema('summary', "A two to three sentence overall assessment of the CV, in {$languageName}."),
                 new ArraySchema('sections', 'Feedback broken down by section/aspect. Provide between 3 and 6 items.', items: $section),
                 new ArraySchema(
                     'missing_keywords',
