@@ -1,6 +1,7 @@
 # CV Optimizer AI
 
 [![Tests](https://github.com/OdeiRZ/CV_Optimizer_AI/actions/workflows/tests.yml/badge.svg)](https://github.com/OdeiRZ/CV_Optimizer_AI/actions/workflows/tests.yml)
+[![Release](https://img.shields.io/github/v/release/OdeiRZ/CV_Optimizer_AI)](https://github.com/OdeiRZ/CV_Optimizer_AI/releases)
 
 Analizador y optimizador de CVs con IA: sube tu currículum (y opcionalmente la oferta de trabajo a la que aspiras) y recibe una puntuación tipo ATS, feedback accionable por secciones y reescrituras concretas de tus puntos más débiles.
 
@@ -26,6 +27,7 @@ Analizador y optimizador de CVs con IA: sube tu currículum (y opcionalmente la 
 - Tailwind CSS v4
 - [Prism PHP](https://prismphp.com/) para la integración con el LLM (Anthropic Claude por defecto, proveedor intercambiable vía configuración)
 - `smalot/pdfparser` y `phpoffice/phpword` para extraer texto de PDF y DOCX
+- SQLite (desarrollo y producción)
 - Pest para los tests (backend mockeando el proveedor LLM con el fake de Prism)
 - Docker + GitHub Actions
 
@@ -97,8 +99,12 @@ La demo en vivo corre en el plan gratuito de [Render](https://render.com) median
 
 - El endpoint que dispara el análisis (llamada de pago al LLM) está limitado a 10 peticiones al día por usuario o IP.
 - Los CVs subidos se guardan en almacenamiento privado (`storage/app/private`), no accesible públicamente.
-- Las credenciales del LLM y de la base de datos se configuran por variables de entorno, nunca en el código.
+- La clave de la API del LLM se configura por variable de entorno, nunca en el código.
 - El schema de salida estructurada que se envía a Anthropic evita restricciones no soportadas por su validador (p. ej. `minimum`/`maximum` en campos numéricos, `minItems`/`maxItems` fuera de `{0, 1}` en arrays) para que el análisis nunca falle por un detalle de formato del proveedor.
+
+## Changelog
+
+Historial de cambios en [CHANGELOG.md](CHANGELOG.md).
 
 ## Licencia
 
