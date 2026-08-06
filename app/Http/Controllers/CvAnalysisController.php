@@ -14,6 +14,7 @@ use Illuminate\Http\Response as HttpResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Throwable;
 
 class CvAnalysisController extends Controller
 {
@@ -36,7 +37,15 @@ class CvAnalysisController extends Controller
             'status' => CvAnalysisStatus::Pending,
         ]);
 
-        AnalyzeCvJob::dispatch($analysis);
+        try {
+            AnalyzeCvJob::dispatch($analysis);
+        } catch (Throwable) {
+            // With QUEUE_CONNECTION=sync (production), the job runs inline
+            // here and rethrows after recording itself as Failed, so a real
+            // async queue worker can retry it. That rethrow must not turn
+            // into a raw 500 for the request that's about to redirect to a
+            // page which already knows how to show that Failed state.
+        }
 
         return to_route('cv-analyses.show', $analysis);
     }

@@ -76,6 +76,33 @@ it('rejects an unsupported language value', function () {
     $response->assertSessionHasErrors('language');
 });
 
+it('still redirects to the results page when the sync-dispatched job throws', function () {
+    // Production runs QUEUE_CONNECTION=sync (see phpunit.xml for tests), so
+    // AnalyzeCvJob::handle() runs inline inside the store() request. Its
+    // catch block records the analysis as Failed but then rethrows (so a
+    // real async queue worker can retry it) - store() must not let that
+    // rethrow bubble into a raw, un-Inertia'd 500 response.
+    Storage::fake('local');
+
+    $this->app->bind(\App\Services\CvTextExtractor::class, function () {
+        return new class extends \App\Services\CvTextExtractor
+        {
+            public function extract(string $disk, string $path): string
+            {
+                throw new \RuntimeException('No text could be extracted from the uploaded CV.');
+            }
+        };
+    });
+
+    $response = $this->post(route('cv-analyses.store'), ['cv' => fakeCvUpload()]);
+
+    $analysis = CvAnalysis::sole();
+
+    $response->assertRedirect(route('cv-analyses.show', $analysis));
+    expect($analysis->status)->toBe(CvAnalysisStatus::Failed)
+        ->and($analysis->error_message)->not->toBeNull();
+});
+
 it('shows a friendly session error instead of a raw 429 once the daily limit is hit', function () {
     Storage::fake('local');
     Bus::fake();
