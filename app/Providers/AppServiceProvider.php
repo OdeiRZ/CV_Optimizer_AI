@@ -32,6 +32,14 @@ class AppServiceProvider extends ServiceProvider
         // withErrors() reuses the same `errors.cv` slot the upload form
         // already renders for validation errors.
         RateLimiter::for('cv-analysis', function (Request $request) {
+            \Illuminate\Support\Facades\Log::info('rate-limit-debug', [
+                'ip' => $request->ip(),
+                'ips' => $request->ips(),
+                'xff' => $request->header('X-Forwarded-For'),
+                'cf_connecting_ip' => $request->header('CF-Connecting-IP'),
+                'true_client_ip' => $request->header('True-Client-IP'),
+            ]);
+
             return Limit::perDay(10)
                 ->by($request->user()?->id ?: $request->ip())
                 ->response(function (Request $request, array $headers) {
