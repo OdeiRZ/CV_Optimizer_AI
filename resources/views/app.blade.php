@@ -4,6 +4,16 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
+        <script>
+            // Applied before first paint (and before React mounts) so the page
+            // never flashes the wrong theme. Dark is the default look of the
+            // app, so an unset preference stays dark rather than following
+            // prefers-color-scheme.
+            if (localStorage.getItem('cv-optimizer-theme') !== 'light') {
+                document.documentElement.classList.add('dark');
+            }
+        </script>
+
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Fonts -->
