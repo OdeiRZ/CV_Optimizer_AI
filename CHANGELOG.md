@@ -69,6 +69,10 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   completada (sembrada en el propio workflow), y falla el build si hay alguna
   violación. Detectó y llevó a corregir un problema real al introducirlo: ninguna
   de las dos páginas tenía un landmark `<main>`.
+- Enlace "Saltar al contenido" al principio de la página de subida y de resultado,
+  oculto salvo que reciba foco por teclado: sin él, alguien navegando con teclado
+  tenía que tabular por el selector de idioma y el tema en cada visita antes de
+  llegar al contenido real.
 
 ### Cambiado
 

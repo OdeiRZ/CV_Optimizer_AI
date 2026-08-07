@@ -4,6 +4,8 @@ import { CvAnalysisLanguage } from '@/types/cv';
 const STORAGE_KEY = 'cv-optimizer-language';
 
 interface Dictionary {
+    skipToContent: string;
+
     headTitleCreate: string;
     badge: string;
     heading: string;
@@ -44,6 +46,8 @@ interface Dictionary {
 
 const translations: Record<CvAnalysisLanguage, Dictionary> = {
     es: {
+        skipToContent: 'Saltar al contenido',
+
         headTitleCreate: 'Analizador de CV con IA',
         badge: 'Impulsado por IA',
         heading: 'Optimiza tu CV en segundos',
@@ -103,6 +107,8 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         severity: { critico: 'Crítico', mejorable: 'Mejorable', ok: 'Correcto' },
     },
     en: {
+        skipToContent: 'Skip to content',
+
         headTitleCreate: 'AI CV Analyzer',
         badge: 'Powered by AI',
         heading: 'Optimize your CV in seconds',
