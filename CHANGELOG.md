@@ -21,7 +21,8 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   preferencia guardada en el navegador. Oscuro sigue siendo el valor por defecto.
 - Botón "Probar con un CV de ejemplo" en la página de subida: carga un CV de muestra
   (ficticio, con debilidades intencionadas) para que se pueda ver el análisis sin
-  tener que buscar un CV real a mano.
+  tener que buscar un CV real a mano. Junto a él, un enlace "Ver el CV de ejemplo"
+  abre ese mismo PDF en una pestaña nueva para poder consultarlo antes de usarlo.
 
 ### Cambiado
 

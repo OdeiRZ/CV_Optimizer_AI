@@ -12,6 +12,7 @@ interface Dictionary {
     dropzoneSubHint: (maxMb: number) => string;
     fileTooLarge: (maxMb: number) => string;
     trySample: string;
+    viewSample: string;
     sampleLoadError: string;
     jobDescriptionLabel: string;
     jobDescriptionPlaceholder: string;
@@ -45,6 +46,7 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         fileTooLarge: (maxMb) =>
             `El archivo supera el límite de ${maxMb} MB. Prueba a exportar el CV como PDF más ligero o reduce su tamaño.`,
         trySample: 'Probar con un CV de ejemplo',
+        viewSample: 'Ver el CV de ejemplo',
         sampleLoadError: 'No se ha podido cargar el CV de ejemplo. Inténtalo de nuevo.',
         jobDescriptionLabel: 'Oferta de trabajo (opcional)',
         jobDescriptionPlaceholder:
@@ -77,6 +79,7 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         fileTooLarge: (maxMb) =>
             `The file exceeds the ${maxMb} MB limit. Try exporting a lighter PDF or reducing its size.`,
         trySample: 'Try with a sample CV',
+        viewSample: 'View the sample CV',
         sampleLoadError: 'Could not load the sample CV. Please try again.',
         jobDescriptionLabel: 'Job posting (optional)',
         jobDescriptionPlaceholder:

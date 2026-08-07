@@ -162,14 +162,24 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
                             </p>
                         )}
 
-                        <button
-                            type="button"
-                            onClick={loadSample}
-                            disabled={loadingSample}
-                            className="mt-3 text-sm font-medium text-emerald-600 hover:text-emerald-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:hover:text-emerald-300"
-                        >
-                            {t.trySample}
-                        </button>
+                        <div className="mt-3 flex items-center justify-center gap-4">
+                            <button
+                                type="button"
+                                onClick={loadSample}
+                                disabled={loadingSample}
+                                className="text-sm font-medium text-emerald-600 hover:text-emerald-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:hover:text-emerald-300"
+                            >
+                                {t.trySample}
+                            </button>
+                            <a
+                                href="/samples/sample-cv.pdf"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                            >
+                                {t.viewSample}
+                            </a>
+                        </div>
 
                         <div className="mt-6">
                             <label
