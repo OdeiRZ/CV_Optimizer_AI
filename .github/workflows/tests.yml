@@ -51,24 +51,26 @@ jobs:
             - name: Run tests
               run: php artisan test
 
-            - name: Seed a completed analysis for accessibility checks
+            - name: Seed a completed analysis for browser checks
               run: |
                   mkdir -p storage/app/private/cv-uploads
-                  cp public/samples/sample-cv.pdf storage/app/private/cv-uploads/a11y-check.pdf
+                  cp public/samples/sample-cv.pdf storage/app/private/cv-uploads/browser-check.pdf
                   cat <<'PHP' | php artisan tinker
-                  App\Models\CvAnalysis::create([
-                      'id' => '01ARZ3NDEKTSV4RRFFQ69G5FAV',
-                      'original_filename' => 'sample-cv.pdf',
-                      'file_path' => 'cv-uploads/a11y-check.pdf',
-                      'status' => App\Enums\CvAnalysisStatus::Completed,
-                      'result' => [
-                          'score' => 72,
-                          'summary' => 'Accessibility check fixture.',
-                          'sections' => [['name' => 'Format', 'severity' => 'ok', 'feedback' => 'Looks fine.']],
-                          'missing_keywords' => ['Docker'],
-                          'bullet_rewrites' => [['original' => 'Before', 'improved' => 'After', 'reason' => 'Why']],
-                      ],
-                  ]);
+                  App\Models\CvAnalysis::updateOrCreate(
+                      ['id' => '01ARZ3NDEKTSV4RRFFQ69G5FAV'],
+                      [
+                          'original_filename' => 'sample-cv.pdf',
+                          'file_path' => 'cv-uploads/browser-check.pdf',
+                          'status' => App\Enums\CvAnalysisStatus::Completed,
+                          'result' => [
+                              'score' => 72,
+                              'summary' => 'Accessibility check fixture.',
+                              'sections' => [['name' => 'Format', 'severity' => 'ok', 'feedback' => 'Looks fine.']],
+                              'missing_keywords' => ['Docker'],
+                              'bullet_rewrites' => [['original' => 'Before', 'improved' => 'After', 'reason' => 'Why']],
+                          ],
+                      ]
+                  );
                   PHP
 
             - name: Start server for browser checks
@@ -91,6 +93,33 @@ jobs:
               run: |
                   export PUPPETEER_EXECUTABLE_PATH="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser)"
                   npm run e2e
+
+            # Re-seeded right before use rather than trusting the fixture from
+            # the earlier step to still be there: in the run that first added
+            # this job, that same row 404'd here despite the a11y check
+            # (which runs right before the e2e step, immediately before this
+            # one) reading it successfully moments earlier - re-asserting it
+            # immediately before the one thing that needs it removes whatever
+            # gap let that happen, whatever its exact cause.
+            - name: Re-seed the completed analysis before Lighthouse
+              run: |
+                  cat <<'PHP' | php artisan tinker
+                  App\Models\CvAnalysis::updateOrCreate(
+                      ['id' => '01ARZ3NDEKTSV4RRFFQ69G5FAV'],
+                      [
+                          'original_filename' => 'sample-cv.pdf',
+                          'file_path' => 'cv-uploads/browser-check.pdf',
+                          'status' => App\Enums\CvAnalysisStatus::Completed,
+                          'result' => [
+                              'score' => 72,
+                              'summary' => 'Accessibility check fixture.',
+                              'sections' => [['name' => 'Format', 'severity' => 'ok', 'feedback' => 'Looks fine.']],
+                              'missing_keywords' => ['Docker'],
+                              'bullet_rewrites' => [['original' => 'Before', 'improved' => 'After', 'reason' => 'Why']],
+                          ],
+                      ]
+                  );
+                  PHP
 
             - name: Run Lighthouse CI (performance, accessibility, best practices, SEO)
               run: |
