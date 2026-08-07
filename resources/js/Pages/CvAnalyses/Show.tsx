@@ -142,7 +142,7 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                                     <iframe
                                         src={route('cv-analyses.file', analysis.id)}
                                         title={t.cvPreviewHeading}
-                                        className="h-[600px] w-full rounded-xl border border-slate-200 dark:border-slate-800"
+                                        className="h-[380px] w-full rounded-xl border border-slate-200 sm:h-[600px] dark:border-slate-800"
                                     />
                                 ) : (
                                     <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900/60">

@@ -99,6 +99,12 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   el propio navegador contra el mismo límite que usa el backend (enviado como prop
   `maxUploadKb`, para que no puedan desincronizarse), así el archivo nunca llega a
   enviarse si es demasiado grande.
+- Auditoría manual de responsive en móvil (simulada con un iframe interno, ya que el
+  redimensionado real de ventana no funcionaba en el entorno de pruebas): el resto
+  del diseño ya era fluido, pero el `<iframe>` de vista previa del CV tenía una
+  altura fija de 600px que en una pantalla de móvil típica ocupaba la mayor parte de
+  la pantalla antes de llegar al feedback. Ahora es de 380px por debajo del punto de
+  corte `sm` y 600px a partir de ahí.
 
 ### Documentado
 
