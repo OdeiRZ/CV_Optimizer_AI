@@ -7,9 +7,11 @@ use App\Enums\CvAnalysisStatus;
 use App\Http\Requests\StoreCvAnalysisRequest;
 use App\Jobs\AnalyzeCvJob;
 use App\Models\CvAnalysis;
+use App\Support\CvAnalysisRateLimiter;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -20,10 +22,12 @@ use Throwable;
 
 class CvAnalysisController extends Controller
 {
-    public function create(): Response
+    public function create(Request $request): Response
     {
         return Inertia::render('CvAnalyses/Create', [
             'maxUploadKb' => config('cv.max_upload_kb'),
+            'dailyLimit' => config('cv.daily_analysis_limit'),
+            'remainingToday' => CvAnalysisRateLimiter::remaining($request),
         ]);
     }
 

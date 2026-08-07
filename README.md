@@ -20,7 +20,7 @@ Analizador y optimizador de CVs con IA: sube tu currículum (y opcionalmente la 
 - Funciona con CVs en cualquier idioma (probado en español e inglés); interfaz y feedback disponibles en español o inglés (selector en la página de subida).
 - Selector de tema claro/oscuro (oscuro por defecto), con la preferencia guardada en el navegador.
 - Procesamiento síncrono en producción (`QUEUE_CONNECTION=sync`) para no depender de un worker persistente en hosting gratuito; procesamiento asíncrono en cola con polling en desarrollo local (`QUEUE_CONNECTION=database`).
-- Límite de uso diario por usuario/IP en el endpoint que llama al LLM, para controlar el coste de una demo pública.
+- Límite de uso diario por usuario/IP en el endpoint que llama al LLM, para controlar el coste de una demo pública. La página de subida muestra cuántos análisis quedan disponibles hoy, en vez de que el límite se descubra solo al toparse con él.
 - Pantalla de espera durante la subida y el análisis (con aviso de no cerrar la pestaña), ya que en producción el análisis se ejecuta dentro de la misma petición y puede tardar varios segundos.
 - Reintento automático (con backoff) ante fallos transitorios de la API del LLM: timeouts de conexión, 5xx o 429, sin reintentar en errores 4xx que fallarían igual dos veces.
 - Botón "Copiar enlace" en la página de resultado para compartir el análisis fácilmente.

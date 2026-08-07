@@ -50,6 +50,13 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   con `aria-live` para que los lectores de pantalla los anuncien; y todos los
   controles interactivos (botones, enlaces, selector de idioma) tienen un anillo de
   foco visible en vez de depender del estilo por defecto del navegador.
+- Indicador de cuota restante ("Te quedan X de 10 análisis hoy") en la página de
+  subida, para que el límite diario se conozca de antemano en vez de descubrirse solo
+  al toparse con él en el intento 11. Reutiliza la misma clave de caché que el
+  limitador (`App\Support\CvAnalysisRateLimiter`), así que el número mostrado es
+  siempre el contador real, no una aproximación.
+- `.github/dependabot.yml`: PRs semanales de actualización para Composer, npm,
+  Docker y GitHub Actions.
 
 ### Cambiado
 

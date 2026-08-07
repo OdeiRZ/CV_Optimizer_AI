@@ -4,7 +4,13 @@ import ThemeToggle from '@/Components/ThemeToggle';
 import { useLanguage } from '@/lib/i18n';
 import { CvAnalysisLanguage } from '@/types/cv';
 
-export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
+interface CreateProps {
+    maxUploadKb: number;
+    dailyLimit: number;
+    remainingToday: number;
+}
+
+export default function Create({ maxUploadKb, dailyLimit, remainingToday }: CreateProps) {
     const { language, setLanguage, t } = useLanguage();
     const maxUploadMb = Math.round(maxUploadKb / 1024);
     const maxUploadBytes = maxUploadKb * 1024;
@@ -127,6 +133,9 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
                         </h1>
                         <p className="mx-auto mt-4 max-w-xl text-slate-600 dark:text-slate-400">
                             {t.subheading}
+                        </p>
+                        <p className="mt-3 text-xs text-slate-400 dark:text-slate-600">
+                            {t.remainingToday(remainingToday, dailyLimit)}
                         </p>
                     </header>
 

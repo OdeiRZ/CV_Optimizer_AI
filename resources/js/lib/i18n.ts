@@ -14,6 +14,7 @@ interface Dictionary {
     trySample: string;
     viewSample: string;
     sampleLoadError: string;
+    remainingToday: (remaining: number, limit: number) => string;
     jobDescriptionLabel: string;
     jobDescriptionPlaceholder: string;
     submitting: string;
@@ -53,6 +54,8 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         trySample: 'Probar con un CV de ejemplo',
         viewSample: 'Ver el CV de ejemplo',
         sampleLoadError: 'No se ha podido cargar el CV de ejemplo. Inténtalo de nuevo.',
+        remainingToday: (remaining, limit) =>
+            `Te quedan ${remaining} de ${limit} análisis hoy.`,
         jobDescriptionLabel: 'Oferta de trabajo (opcional)',
         jobDescriptionPlaceholder:
             'Pega aquí la descripción del puesto para recibir un análisis de compatibilidad y palabras clave ausentes.',
@@ -92,6 +95,8 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         trySample: 'Try with a sample CV',
         viewSample: 'View the sample CV',
         sampleLoadError: 'Could not load the sample CV. Please try again.',
+        remainingToday: (remaining, limit) =>
+            `You have ${remaining} of ${limit} analyses left today.`,
         jobDescriptionLabel: 'Job posting (optional)',
         jobDescriptionPlaceholder:
             'Paste the job description here to get a compatibility analysis and missing keywords.',

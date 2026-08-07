@@ -25,6 +25,23 @@ it('tells the frontend the configured upload size limit', function () {
         ->assertInertia(fn ($page) => $page->where('maxUploadKb', config('cv.max_upload_kb')));
 });
 
+it('tells the frontend how many analyses are left today', function () {
+    Storage::fake('local');
+    Bus::fake();
+
+    $limit = config('cv.daily_analysis_limit');
+
+    $this->get(route('cv-analyses.create'))
+        ->assertInertia(fn ($page) => $page
+            ->where('dailyLimit', $limit)
+            ->where('remainingToday', $limit));
+
+    $this->post(route('cv-analyses.store'), ['cv' => fakeCvUpload()])->assertRedirect();
+
+    $this->get(route('cv-analyses.create'))
+        ->assertInertia(fn ($page) => $page->where('remainingToday', $limit - 1));
+});
+
 it('rejects files that are not pdf or docx', function () {
     Storage::fake('local');
 

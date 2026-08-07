@@ -5,4 +5,6 @@ return [
     'analysis_model' => env('CV_ANALYSIS_MODEL', 'claude-haiku-4-5'),
 
     'max_upload_kb' => env('CV_MAX_UPLOAD_KB', 5120),
+
+    'daily_analysis_limit' => env('CV_DAILY_ANALYSIS_LIMIT', 10),
 ];
