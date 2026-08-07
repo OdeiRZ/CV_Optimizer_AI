@@ -21,6 +21,7 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
         });
 
     const [isDragging, setIsDragging] = useState(false);
+    const [loadingSample, setLoadingSample] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const submit: FormEventHandler = (e) => {
@@ -52,6 +53,24 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
 
         clearErrors('cv');
         setData('cv', file);
+    };
+
+    const loadSample = async () => {
+        setLoadingSample(true);
+        clearErrors('cv');
+        try {
+            const response = await fetch('/samples/sample-cv.pdf');
+            if (!response.ok) {
+                throw new Error('sample fetch failed');
+            }
+            const blob = await response.blob();
+            const file = new File([blob], 'sample-cv.pdf', { type: 'application/pdf' });
+            setData('cv', file);
+        } catch {
+            setError('cv', t.sampleLoadError);
+        } finally {
+            setLoadingSample(false);
+        }
     };
 
     return (
@@ -142,6 +161,15 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
                                 {errors.cv}
                             </p>
                         )}
+
+                        <button
+                            type="button"
+                            onClick={loadSample}
+                            disabled={loadingSample}
+                            className="mt-3 text-sm font-medium text-emerald-600 hover:text-emerald-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:hover:text-emerald-300"
+                        >
+                            {t.trySample}
+                        </button>
 
                         <div className="mt-6">
                             <label
