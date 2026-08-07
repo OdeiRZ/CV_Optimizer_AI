@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import axios from 'axios';
+import ScoreGauge from '@/Components/ScoreGauge';
 import ThemeToggle from '@/Components/ThemeToggle';
 import { useLanguage } from '@/lib/i18n';
 import { CvAnalysis, CvAnalysisSeverity } from '@/types/cv';
@@ -11,12 +12,6 @@ const severityStyles: Record<CvAnalysisSeverity, string> = {
         'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30',
     ok: 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30',
 };
-
-function scoreColor(score: number): string {
-    if (score >= 80) return 'text-emerald-600 dark:text-emerald-400';
-    if (score >= 50) return 'text-amber-600 dark:text-amber-400';
-    return 'text-red-600 dark:text-red-400';
-}
 
 export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
     const [analysis, setAnalysis] = useState(initial);
@@ -105,14 +100,7 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                     {analysis.status === 'completed' && analysis.result && (
                         <div className="space-y-8">
                             <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900/60">
-                                <span
-                                    className={`text-6xl font-bold ${scoreColor(analysis.result.score)}`}
-                                >
-                                    {analysis.result.score}
-                                </span>
-                                <span className="mt-1 text-sm text-slate-500">
-                                    {t.scoreLabel}
-                                </span>
+                                <ScoreGauge score={analysis.result.score} label={t.scoreLabel} />
                                 <p className="mt-4 max-w-xl text-slate-700 dark:text-slate-300">
                                     {analysis.result.summary}
                                 </p>

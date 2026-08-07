@@ -61,6 +61,9 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   (formato/ATS, impacto cuantificado, palabras clave) que reflejan los mismos
   criterios que evalúa el prompt del LLM en `AnalyzeCvJob`, para que quien llega a
   la demo entienda qué se va a evaluar antes de subir un CV propio.
+- Gauge circular SVG (`ScoreGauge`) para la puntuación en la página de resultado, en
+  vez de un número suelto: el arco relleno usa el mismo umbral de color (rojo/ámbar/
+  verde) que ya se usaba en el texto.
 
 ### Cambiado
 
