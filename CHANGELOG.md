@@ -82,6 +82,15 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   solo el script de tema anti-FOUC en `app.blade.php` necesita el nonce a mano.
   `style-src` permite `unsafe-inline` porque el único uso real de estilos en línea es
   el ancho de la barra de progreso de subida, que no puede ejecutar JavaScript.
+- Test E2E de humo en CI (`npm run e2e`, `scripts/e2e-smoke.mjs`, reutilizando
+  `puppeteer-core` en vez de añadir Playwright como segunda herramienta de
+  automatización): sube el CV de ejemplo por el input real, envía el formulario y
+  comprueba que aterriza en una página de resultado con un estado reconocible
+  (`role="status"`/`role="alert"`), no una página en blanco o un error 500 en crudo.
+  No comprueba un análisis completo (CI no tiene `ANTHROPIC_API_KEY` real ni un
+  worker de cola consumiendo el job), pero sí valida subida, validación, creación
+  del registro y redirect: la parte del flujo que de verdad puede romperse por un
+  cambio en el código, no por la disponibilidad de la API externa.
 
 ### Cambiado
 

@@ -5,7 +5,8 @@
     "scripts": {
         "build": "tsc && vite build",
         "dev": "vite",
-        "a11y": "node scripts/a11y-check.mjs"
+        "a11y": "node scripts/a11y-check.mjs",
+        "e2e": "node scripts/e2e-smoke.mjs"
     },
     "devDependencies": {
         "@headlessui/react": "^2.0.0",

@@ -71,7 +71,7 @@ jobs:
                   ]);
                   PHP
 
-            - name: Start server for accessibility checks
+            - name: Start server for browser checks
               run: php artisan serve --port=8000 &
 
             - name: Wait for server
@@ -84,3 +84,10 @@ jobs:
               run: |
                   export PUPPETEER_EXECUTABLE_PATH="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser)"
                   npm run a11y
+
+            - name: Run end-to-end smoke test (upload -> results page)
+              env:
+                  E2E_BASE_URL: http://127.0.0.1:8000
+              run: |
+                  export PUPPETEER_EXECUTABLE_PATH="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser)"
+                  npm run e2e
