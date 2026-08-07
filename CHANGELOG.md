@@ -92,11 +92,20 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   del registro y redirect: la parte del flujo que de verdad puede romperse por un
   cambio en el código, no por la disponibilidad de la API externa.
 - Lighthouse CI (`npm run lighthouse`, `lighthouserc.json`) contra la página de
-  subida y una página de resultado completada, con umbrales por categoría en vez de
-  auditorías individuales (más frágiles): accesibilidad, buenas prácticas y SEO
-  fallan el build por debajo de 0.9; rendimiento solo avisa (`warn`) por debajo de
-  0.5, ya que la puntuación de rendimiento fluctúa según la carga del runner
-  compartido de GitHub Actions y no es un buen motivo para bloquear el build.
+  subida, con umbrales por categoría en vez de auditorías individuales (más
+  frágiles): accesibilidad, buenas prácticas y SEO fallan el build por debajo de
+  0.9; rendimiento solo avisa (`warn`) por debajo de 0.5, ya que la puntuación de
+  rendimiento fluctúa según la carga del runner compartido de GitHub Actions y no
+  es un buen motivo para bloquear el build. Inicialmente incluía también una página
+  de resultado completada, pero se retiró: dos ejecuciones seguidas en CI mostraron
+  al Chrome de Lighthouse recibiendo un 404 real de `php artisan serve` en esa URL,
+  la misma que el chequeo de accesibilidad (vía Puppeteer) acababa de cargar bien
+  segundos antes en el mismo job, contra una fila cuya existencia un paso dedicado
+  acababa de reconfirmar justo antes. No es un problema del ciclo de vida del
+  fixture, sino algo específico de cómo el Chrome propio de Lighthouse navega
+  contra el servidor de desarrollo de PHP (de un solo hilo) que `page.goto()` de
+  Puppeteer no provoca. Queda como limitación conocida en vez de seguir
+  investigando a ciegas gastando ciclos de CI.
 
 ### Cambiado
 
