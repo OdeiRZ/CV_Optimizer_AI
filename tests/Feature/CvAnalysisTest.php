@@ -286,6 +286,66 @@ it('returns 404 for a report of an analysis that is not completed', function () 
     $this->get(route('cv-analyses.report', $analysis))->assertNotFound();
 });
 
+it('serves the original pdf inline for preview', function () {
+    Storage::fake('local');
+    Storage::disk('local')->put('cv-uploads/fake.pdf', '%PDF-1.4 fake content');
+
+    $analysis = CvAnalysis::create([
+        'original_filename' => 'cv.pdf',
+        'file_path' => 'cv-uploads/fake.pdf',
+        'status' => CvAnalysisStatus::Completed,
+    ]);
+
+    $response = $this->get(route('cv-analyses.file', $analysis));
+
+    $response->assertOk();
+    expect($response->headers->get('Content-Type'))->toBe('application/pdf');
+    expect($response->headers->get('Content-Disposition'))->toContain('inline');
+});
+
+it('returns 404 previewing a non-pdf file', function () {
+    Storage::fake('local');
+    Storage::disk('local')->put('cv-uploads/fake.docx', 'fake docx content');
+
+    $analysis = CvAnalysis::create([
+        'original_filename' => 'cv.docx',
+        'file_path' => 'cv-uploads/fake.docx',
+        'status' => CvAnalysisStatus::Completed,
+    ]);
+
+    $this->get(route('cv-analyses.file', $analysis))->assertNotFound();
+});
+
+it('returns 404 previewing a pdf whose file no longer exists on disk', function () {
+    Storage::fake('local');
+
+    $analysis = CvAnalysis::create([
+        'original_filename' => 'cv.pdf',
+        'file_path' => 'cv-uploads/missing.pdf',
+        'status' => CvAnalysisStatus::Completed,
+    ]);
+
+    $this->get(route('cv-analyses.file', $analysis))->assertNotFound();
+});
+
+it('tells the frontend whether the uploaded file is a pdf that can be previewed', function () {
+    $pdfAnalysis = CvAnalysis::create([
+        'original_filename' => 'cv.pdf',
+        'file_path' => 'cv-uploads/fake.pdf',
+        'status' => CvAnalysisStatus::Pending,
+    ]);
+    $docxAnalysis = CvAnalysis::create([
+        'original_filename' => 'cv.docx',
+        'file_path' => 'cv-uploads/fake.docx',
+        'status' => CvAnalysisStatus::Pending,
+    ]);
+
+    $this->get(route('cv-analyses.show', $pdfAnalysis))
+        ->assertInertia(fn ($page) => $page->where('analysis.is_pdf', true));
+    $this->get(route('cv-analyses.show', $docxAnalysis))
+        ->assertInertia(fn ($page) => $page->where('analysis.is_pdf', false));
+});
+
 it('builds a schema with the expected top-level fields', function () {
     $schema = CvAnalysisSchema::make()->toArray();
 

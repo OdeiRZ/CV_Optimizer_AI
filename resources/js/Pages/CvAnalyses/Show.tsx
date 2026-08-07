@@ -104,6 +104,23 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
 
                             <div className="space-y-3">
                                 <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
+                                    {t.cvPreviewHeading}
+                                </h2>
+                                {analysis.is_pdf ? (
+                                    <iframe
+                                        src={route('cv-analyses.file', analysis.id)}
+                                        title={t.cvPreviewHeading}
+                                        className="h-[600px] w-full rounded-xl border border-slate-200 dark:border-slate-800"
+                                    />
+                                ) : (
+                                    <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900/60">
+                                        {t.cvPreviewUnavailable}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="space-y-3">
+                                <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
                                     {t.sectionsHeading}
                                 </h2>
                                 {analysis.result.sections.map((section) => (

@@ -28,6 +28,8 @@ interface Dictionary {
     retry: string;
     scoreLabel: string;
     downloadPdf: string;
+    cvPreviewHeading: string;
+    cvPreviewUnavailable: string;
     sectionsHeading: string;
     missingKeywordsHeading: string;
     rewritesHeading: string;
@@ -63,6 +65,9 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         retry: 'Volver a intentarlo',
         scoreLabel: 'Puntuación sobre 100',
         downloadPdf: 'Descargar informe (PDF)',
+        cvPreviewHeading: 'Tu CV',
+        cvPreviewUnavailable:
+            'La vista previa no está disponible para archivos DOCX, solo para PDF.',
         sectionsHeading: 'Feedback por sección',
         missingKeywordsHeading: 'Palabras clave ausentes',
         rewritesHeading: 'Puntos reescritos',
@@ -96,6 +101,8 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         retry: 'Try again',
         scoreLabel: 'Score out of 100',
         downloadPdf: 'Download report (PDF)',
+        cvPreviewHeading: 'Your CV',
+        cvPreviewUnavailable: 'Preview is only available for PDF, not DOCX, files.',
         sectionsHeading: 'Feedback by section',
         missingKeywordsHeading: 'Missing keywords',
         rewritesHeading: 'Rewritten bullet points',

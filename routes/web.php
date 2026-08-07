@@ -20,6 +20,9 @@ Route::get('/cv-analyses/{cvAnalysis}/status', [CvAnalysisController::class, 'st
 Route::get('/cv-analyses/{cvAnalysis}/report', [CvAnalysisController::class, 'downloadReport'])
     ->name('cv-analyses.report');
 
+Route::get('/cv-analyses/{cvAnalysis}/file', [CvAnalysisController::class, 'previewFile'])
+    ->name('cv-analyses.file');
+
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');

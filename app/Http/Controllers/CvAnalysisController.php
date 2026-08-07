@@ -11,8 +11,10 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
@@ -79,6 +81,27 @@ class CvAnalysisController extends Controller
     }
 
     /**
+     * Serves the originally uploaded file inline (not as an attachment) so
+     * the results page can embed it in an <iframe> preview. Only PDFs are
+     * supported: DOCX has no equivalent native browser viewer, and rendering
+     * one server-side would need a heavy dependency (e.g. LibreOffice
+     * headless) that isn't viable on Render's free tier.
+     */
+    public function previewFile(CvAnalysis $cvAnalysis): StreamedResponse
+    {
+        if (! $this->isPdf($cvAnalysis) || ! Storage::exists($cvAnalysis->file_path)) {
+            throw new NotFoundHttpException;
+        }
+
+        return Storage::response($cvAnalysis->file_path, $cvAnalysis->original_filename);
+    }
+
+    protected function isPdf(CvAnalysis $cvAnalysis): bool
+    {
+        return strtolower(pathinfo($cvAnalysis->file_path, PATHINFO_EXTENSION)) === 'pdf';
+    }
+
+    /**
      * @return array<string, mixed>
      */
     protected function toPayload(CvAnalysis $cvAnalysis): array
@@ -90,6 +113,7 @@ class CvAnalysisController extends Controller
             'language' => $cvAnalysis->language->value,
             'result' => $cvAnalysis->result,
             'error_message' => $cvAnalysis->error_message,
+            'is_pdf' => $this->isPdf($cvAnalysis),
         ];
     }
 }

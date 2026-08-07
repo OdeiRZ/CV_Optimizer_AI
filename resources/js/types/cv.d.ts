@@ -35,4 +35,5 @@ export interface CvAnalysis {
     language: CvAnalysisLanguage;
     result: CvAnalysisResult | null;
     error_message: string | null;
+    is_pdf: boolean;
 }

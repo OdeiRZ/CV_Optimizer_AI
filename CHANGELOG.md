@@ -23,6 +23,11 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   (ficticio, con debilidades intencionadas) para que se pueda ver el análisis sin
   tener que buscar un CV real a mano. Junto a él, un enlace "Ver el CV de ejemplo"
   abre ese mismo PDF en una pestaña nueva para poder consultarlo antes de usarlo.
+- Vista previa del CV original embebida en la página de resultado (solo para PDF,
+  vía `<iframe>` al visor nativo del navegador), para poder ver a la vez el feedback
+  y el formato real del documento y detectar problemas de maquetación que el
+  análisis por texto no puede ver. Los DOCX muestran un aviso de que la vista
+  previa no está disponible, en vez de convertirlos a imagen en el servidor.
 
 ### Cambiado
 
