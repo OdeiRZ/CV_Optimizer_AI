@@ -20,6 +20,11 @@ it('renders the upload page', function () {
     $this->get(route('cv-analyses.create'))->assertOk();
 });
 
+it('tells the frontend the configured upload size limit', function () {
+    $this->get(route('cv-analyses.create'))
+        ->assertInertia(fn ($page) => $page->where('maxUploadKb', config('cv.max_upload_kb')));
+});
+
 it('rejects files that are not pdf or docx', function () {
     Storage::fake('local');
 

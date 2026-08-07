@@ -20,7 +20,9 @@ class CvAnalysisController extends Controller
 {
     public function create(): Response
     {
-        return Inertia::render('CvAnalyses/Create');
+        return Inertia::render('CvAnalyses/Create', [
+            'maxUploadKb' => config('cv.max_upload_kb'),
+        ]);
     }
 
     public function store(StoreCvAnalysisRequest $request): RedirectResponse

@@ -9,7 +9,8 @@ interface Dictionary {
     heading: string;
     subheading: string;
     dropzoneHint: string;
-    dropzoneSubHint: string;
+    dropzoneSubHint: (maxMb: number) => string;
+    fileTooLarge: (maxMb: number) => string;
     jobDescriptionLabel: string;
     jobDescriptionPlaceholder: string;
     submitting: string;
@@ -38,7 +39,9 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         subheading:
             'Sube tu CV y, opcionalmente, la oferta a la que aspiras. Recibe una puntuación tipo ATS, feedback accionable y reescrituras de tus puntos más débiles.',
         dropzoneHint: 'Arrastra tu CV aquí o haz clic para subirlo',
-        dropzoneSubHint: 'PDF o DOCX, máx. 5 MB',
+        dropzoneSubHint: (maxMb) => `PDF o DOCX, máx. ${maxMb} MB`,
+        fileTooLarge: (maxMb) =>
+            `El archivo supera el límite de ${maxMb} MB. Prueba a exportar el CV como PDF más ligero o reduce su tamaño.`,
         jobDescriptionLabel: 'Oferta de trabajo (opcional)',
         jobDescriptionPlaceholder:
             'Pega aquí la descripción del puesto para recibir un análisis de compatibilidad y palabras clave ausentes.',
@@ -66,7 +69,9 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         subheading:
             'Upload your CV and, optionally, the job posting you are applying to. Get an ATS-style score, actionable feedback and rewrites of your weakest points.',
         dropzoneHint: 'Drag your CV here or click to upload it',
-        dropzoneSubHint: 'PDF or DOCX, max. 5 MB',
+        dropzoneSubHint: (maxMb) => `PDF or DOCX, max. ${maxMb} MB`,
+        fileTooLarge: (maxMb) =>
+            `The file exceeds the ${maxMb} MB limit. Try exporting a lighter PDF or reducing its size.`,
         jobDescriptionLabel: 'Job posting (optional)',
         jobDescriptionPlaceholder:
             'Paste the job description here to get a compatibility analysis and missing keywords.',

@@ -4,18 +4,21 @@ import ThemeToggle from '@/Components/ThemeToggle';
 import { useLanguage } from '@/lib/i18n';
 import { CvAnalysisLanguage } from '@/types/cv';
 
-export default function Create() {
+export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
     const { language, setLanguage, t } = useLanguage();
+    const maxUploadMb = Math.round(maxUploadKb / 1024);
+    const maxUploadBytes = maxUploadKb * 1024;
 
-    const { data, setData, post, processing, progress, errors } = useForm<{
-        cv: File | null;
-        job_description: string;
-        language: CvAnalysisLanguage;
-    }>({
-        cv: null,
-        job_description: '',
-        language,
-    });
+    const { data, setData, post, processing, progress, errors, setError, clearErrors } =
+        useForm<{
+            cv: File | null;
+            job_description: string;
+            language: CvAnalysisLanguage;
+        }>({
+            cv: null,
+            job_description: '',
+            language,
+        });
 
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -32,9 +35,23 @@ export default function Create() {
 
     const handleFiles = (files: FileList | null) => {
         const file = files?.[0];
-        if (file) {
-            setData('cv', file);
+        if (!file) {
+            return;
         }
+
+        // Checked client-side, before the file ever leaves the browser:
+        // an oversized upload otherwise gets rejected by PHP's own
+        // post_max_size/upload_max_filesize before Laravel's validation
+        // ever runs, producing a raw, unstyled error page instead of this
+        // form's normal errors.cv message.
+        if (file.size > maxUploadBytes) {
+            setError('cv', t.fileTooLarge(maxUploadMb));
+            setData('cv', null);
+            return;
+        }
+
+        clearErrors('cv');
+        setData('cv', file);
     };
 
     return (
@@ -115,7 +132,7 @@ export default function Create() {
                                         {t.dropzoneHint}
                                     </p>
                                     <p className="mt-1 text-sm text-slate-500">
-                                        {t.dropzoneSubHint}
+                                        {t.dropzoneSubHint(maxUploadMb)}
                                     </p>
                                 </>
                             )}
