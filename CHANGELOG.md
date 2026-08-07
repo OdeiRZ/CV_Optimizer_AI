@@ -50,6 +50,13 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   del balanceador de Render — que además no es estable entre peticiones, por lo que el
   contador por IP nunca superaba 1 para el mismo visitante. Ahora se usa la cabecera
   `CF-Connecting-IP` de Cloudflare, que sí lleva la IP real del visitante.
+- Un CV que superaba el límite de tamaño (probado con un DOCX de 9,7 MB) provocaba un
+  413 en crudo de PHP en lugar del mensaje de validación habitual del formulario: el
+  límite de Laravel nunca llegaba a comprobarse porque `post_max_size`/
+  `upload_max_filesize` de PHP rechazan la petición antes. Ahora se valida el tamaño en
+  el propio navegador contra el mismo límite que usa el backend (enviado como prop
+  `maxUploadKb`, para que no puedan desincronizarse), así el archivo nunca llega a
+  enviarse si es demasiado grande.
 
 ### Documentado
 
