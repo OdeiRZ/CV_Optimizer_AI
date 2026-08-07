@@ -91,6 +91,12 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   worker de cola consumiendo el job), pero sí valida subida, validación, creación
   del registro y redirect: la parte del flujo que de verdad puede romperse por un
   cambio en el código, no por la disponibilidad de la API externa.
+- Lighthouse CI (`npm run lighthouse`, `lighthouserc.json`) contra la página de
+  subida y una página de resultado completada, con umbrales por categoría en vez de
+  auditorías individuales (más frágiles): accesibilidad, buenas prácticas y SEO
+  fallan el build por debajo de 0.9; rendimiento solo avisa (`warn`) por debajo de
+  0.5, ya que la puntuación de rendimiento fluctúa según la carga del runner
+  compartido de GitHub Actions y no es un buen motivo para bloquear el build.
 
 ### Cambiado
 

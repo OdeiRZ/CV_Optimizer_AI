@@ -3,6 +3,8 @@
 .env
 /database/*.sqlite
 .env.backup
+/.lighthouseci
+/lighthouse-results
 .env.production
 .phpactor.json
 .phpunit.result.cache
