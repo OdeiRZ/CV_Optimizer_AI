@@ -28,6 +28,12 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   y el formato real del documento y detectar problemas de maquetación que el
   análisis por texto no puede ver. Los DOCX muestran un aviso de que la vista
   previa no está disponible, en vez de convertirlos a imagen en el servidor.
+- Pantalla de espera en la página de subida mientras se sube y analiza el CV, con
+  aviso de no cerrar ni recargar la pestaña. En producción (`QUEUE_CONNECTION=sync`)
+  el análisis se ejecuta dentro de la misma petición del formulario, así que casi
+  todo el tiempo de espera ocurría ahí sin ningún feedback más allá del botón
+  deshabilitado; ahora se sustituye el formulario por un spinner con el nombre del
+  fichero, y un `beforeunload` avisa si se intenta cerrar la pestaña mientras tanto.
 
 ### Cambiado
 

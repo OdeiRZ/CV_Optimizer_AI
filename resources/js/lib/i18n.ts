@@ -24,6 +24,7 @@ interface Dictionary {
     backLink: string;
     analyzing: (filename: string) => string;
     analyzingSubtext: string;
+    analyzingWarning: string;
     genericError: string;
     retry: string;
     scoreLabel: string;
@@ -61,6 +62,7 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         backLink: '← Analizar otro CV',
         analyzing: (filename) => `Analizando ${filename}...`,
         analyzingSubtext: 'Esto suele tardar unos segundos.',
+        analyzingWarning: 'No cierres ni recargues esta pestaña, o perderás el análisis.',
         genericError: 'No se ha podido analizar el CV.',
         retry: 'Volver a intentarlo',
         scoreLabel: 'Puntuación sobre 100',
@@ -97,6 +99,7 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         backLink: '← Analyze another CV',
         analyzing: (filename) => `Analyzing ${filename}...`,
         analyzingSubtext: 'This usually takes a few seconds.',
+        analyzingWarning: "Don't close or reload this tab, or you'll lose the analysis.",
         genericError: 'The CV could not be analyzed.',
         retry: 'Try again',
         scoreLabel: 'Score out of 100',

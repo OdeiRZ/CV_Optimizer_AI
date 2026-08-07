@@ -21,6 +21,7 @@ Analizador y optimizador de CVs con IA: sube tu currículum (y opcionalmente la 
 - Selector de tema claro/oscuro (oscuro por defecto), con la preferencia guardada en el navegador.
 - Procesamiento síncrono en producción (`QUEUE_CONNECTION=sync`) para no depender de un worker persistente en hosting gratuito; procesamiento asíncrono en cola con polling en desarrollo local (`QUEUE_CONNECTION=database`).
 - Límite de uso diario por usuario/IP en el endpoint que llama al LLM, para controlar el coste de una demo pública.
+- Pantalla de espera durante la subida y el análisis (con aviso de no cerrar la pestaña), ya que en producción el análisis se ejecuta dentro de la misma petición y puede tardar varios segundos.
 
 > **Nota sobre la puntuación:** el análisis lo genera un LLM, no una fórmula fija — es un juicio, no un cálculo determinista. Analizar el mismo CV varias veces puede dar puntuaciones ligeramente distintas cada vez. El proyecto llama a la API con `temperature: 0` (la configuración más determinista disponible) para minimizar esa variación, pero no puede eliminarla del todo; no es un bug si dos ejecuciones sobre el mismo CV no coinciden exactamente.
 

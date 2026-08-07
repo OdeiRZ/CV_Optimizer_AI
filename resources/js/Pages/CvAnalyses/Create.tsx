@@ -1,4 +1,4 @@
-import { FormEventHandler, useRef, useState } from 'react';
+import { FormEventHandler, useEffect, useRef, useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import ThemeToggle from '@/Components/ThemeToggle';
 import { useLanguage } from '@/lib/i18n';
@@ -28,6 +28,24 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
         e.preventDefault();
         post(route('cv-analyses.store'), { forceFormData: true });
     };
+
+    // Production runs the analysis synchronously inside this same request
+    // (QUEUE_CONNECTION=sync), so `processing` stays true for the entire
+    // upload-plus-LLM-call duration - warn before an accidental tab close
+    // or reload throws that work away.
+    useEffect(() => {
+        if (!processing) {
+            return;
+        }
+
+        const handler = (e: BeforeUnloadEvent) => {
+            e.preventDefault();
+            e.returnValue = '';
+        };
+
+        window.addEventListener('beforeunload', handler);
+        return () => window.removeEventListener('beforeunload', handler);
+    }, [processing]);
 
     const selectLanguage = (next: CvAnalysisLanguage) => {
         setLanguage(next);
@@ -111,6 +129,30 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
                         </p>
                     </header>
 
+                    {processing ? (
+                        <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-8 py-24 text-center shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-black/20">
+                            <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-500 dark:border-slate-700 dark:border-t-emerald-400" />
+                            <p className="mt-6 font-medium text-slate-800 dark:text-slate-200">
+                                {progress && (progress.percentage ?? 100) < 100
+                                    ? t.submitting
+                                    : t.analyzing(data.cv?.name ?? '')}
+                            </p>
+                            <p className="mt-1 text-sm text-slate-500">
+                                {t.analyzingSubtext}
+                            </p>
+                            {progress && (progress.percentage ?? 100) < 100 && (
+                                <div className="mt-4 h-2 w-56 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                                    <div
+                                        className="h-full bg-emerald-500 transition-all"
+                                        style={{ width: `${progress.percentage}%` }}
+                                    />
+                                </div>
+                            )}
+                            <p className="mt-6 text-xs font-medium text-amber-600 dark:text-amber-400">
+                                {t.analyzingWarning}
+                            </p>
+                        </div>
+                    ) : (
                     <form
                         onSubmit={submit}
                         className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-black/20"
@@ -205,23 +247,15 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
                             )}
                         </div>
 
-                        {progress && (
-                            <div className="mt-6 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                                <div
-                                    className="h-full bg-emerald-500 transition-all"
-                                    style={{ width: `${progress.percentage}%` }}
-                                />
-                            </div>
-                        )}
-
                         <button
                             type="submit"
-                            disabled={processing || !data.cv}
+                            disabled={!data.cv}
                             className="mt-8 w-full rounded-lg bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                            {processing ? t.submitting : t.submit}
+                            {t.submit}
                         </button>
                     </form>
+                    )}
 
                     <p className="mt-8 text-center text-xs text-slate-500 dark:text-slate-600">
                         {t.privacyNote}
