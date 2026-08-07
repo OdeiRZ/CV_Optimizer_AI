@@ -102,7 +102,7 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
             <Head title={t.headTitleCreate} />
 
             <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 text-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 dark:text-slate-100">
-                <div className="mx-auto max-w-3xl px-6 py-16">
+                <main className="mx-auto max-w-3xl px-6 py-16">
                     <div className="mb-8 flex items-center justify-center gap-3">
                         <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 text-xs font-medium dark:border-slate-800 dark:bg-slate-900/60">
                             {(['es', 'en'] as const).map((option) => (
@@ -309,7 +309,7 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
                             ))}
                         </div>
                     </div>
-                </div>
+                </main>
             </div>
         </>
     );

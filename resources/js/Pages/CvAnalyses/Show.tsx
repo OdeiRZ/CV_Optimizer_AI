@@ -49,7 +49,7 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
             <Head title={t.headTitleShow} />
 
             <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 text-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 dark:text-slate-100">
-                <div className="mx-auto max-w-3xl px-6 py-16">
+                <main className="mx-auto max-w-3xl px-6 py-16">
                     <div className="mb-8 flex items-center justify-between">
                         <Link
                             href={route('cv-analyses.create')}
@@ -212,7 +212,7 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                             )}
                         </div>
                     )}
-                </div>
+                </main>
             </div>
         </>
     );

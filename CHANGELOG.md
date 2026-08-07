@@ -64,6 +64,11 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 - Gauge circular SVG (`ScoreGauge`) para la puntuación en la página de resultado, en
   vez de un número suelto: el arco relleno usa el mismo umbral de color (rojo/ámbar/
   verde) que ya se usaba en el texto.
+- Chequeo de accesibilidad en CI (`npm run a11y`, `scripts/a11y-check.mjs`): ejecuta
+  axe-core con Puppeteer contra la página de subida y una página de resultado
+  completada (sembrada en el propio workflow), y falla el build si hay alguna
+  violación. Detectó y llevó a corregir un problema real al introducirlo: ninguna
+  de las dos páginas tenía un landmark `<main>`.
 
 ### Cambiado
 
