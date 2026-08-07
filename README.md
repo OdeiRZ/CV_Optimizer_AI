@@ -11,7 +11,7 @@ Analizador y optimizador de CVs con IA: sube tu currículum (y opcionalmente la 
 
 ## Características
 
-- Subida de CV por drag & drop (PDF o DOCX, máx. 5 MB, validado en el propio navegador antes de enviarlo) con extracción de texto automática.
+- Subida de CV por drag & drop (PDF o DOCX, máx. 5 MB, validado en el propio navegador antes de enviarlo) con extracción de texto automática. Botón "Probar con un CV de ejemplo" para quien quiera ver el resultado sin subir un CV propio.
 - Análisis por IA con salida estructurada: puntuación 0-100, resumen, feedback por sección (formato, experiencia, palabras clave) con nivel de severidad.
 - Coincidencia opcional contra una oferta de trabajo: detecta palabras clave importantes ausentes en el CV.
 - Reescritura de las líneas de experiencia más débiles del CV (voz pasiva o sin métricas) a una versión más fuerte, con justificación de cada cambio.
