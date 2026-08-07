@@ -104,7 +104,7 @@ La demo en vivo corre en el plan gratuito de [Render](https://render.com) median
 ## Seguridad
 
 - El endpoint que dispara el análisis (llamada de pago al LLM) está limitado a 10 peticiones al día por usuario o IP (identificando la IP real vía Cloudflare, no vía `$request->ip()` — ver [Despliegue](#despliegue)).
-- Los CVs subidos se guardan en almacenamiento privado (`storage/app/private`), no accesible públicamente.
+- Los CVs subidos se guardan en almacenamiento privado (`storage/app/private`), no accesible directamente por URL de disco: tanto la descarga del informe como la vista previa del PDF pasan por rutas de la aplicación cuyo único control de acceso es el identificador ULID del análisis (igual que la propia página de resultado), no hay listados ni URLs predecibles.
 - La clave de la API del LLM se configura por variable de entorno, nunca en el código.
 - El schema de salida estructurada que se envía a Anthropic evita restricciones no soportadas por su validador (p. ej. `minimum`/`maximum` en campos numéricos, `minItems`/`maxItems` fuera de `{0, 1}` en arrays) para que el análisis nunca falle por un detalle de formato del proveedor.
 
