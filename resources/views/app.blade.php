@@ -4,7 +4,9 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <script>
+        @php($cspNonce = \Illuminate\Support\Facades\Vite::cspNonce())
+
+        <script nonce="{{ $cspNonce }}">
             // Applied before first paint (and before React mounts) so the page
             // never flashes the wrong theme. Dark is the default look of the
             // app, so an unset preference stays dark rather than following
@@ -37,7 +39,7 @@
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
-        @routes
+        @routes(nonce: $cspNonce)
         @viteReactRefresh
         @vite(['resources/js/app.tsx', "resources/js/Pages/{$page['component']}.tsx"])
         @inertiaHead

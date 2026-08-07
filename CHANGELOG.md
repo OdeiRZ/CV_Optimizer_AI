@@ -73,6 +73,15 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   oculto salvo que reciba foco por teclado: sin él, alguien navegando con teclado
   tenía que tabular por el selector de idioma y el tema en cada visita antes de
   llegar al contenido real.
+- Content-Security-Policy (`App\Http\Middleware\AddContentSecurityPolicy`), activa
+  en todo entorno salvo `local` (el cliente HMR de Vite necesita un `connect-src`
+  abierto a su propio servidor de desarrollo para el websocket de recarga en
+  caliente, algo que un nonce no puede eximir). `script-src` usa un nonce por
+  petición (`Vite::useCspNonce()`), que además hace que `@vite`, `@viteReactRefresh`
+  y `@routes(nonce: ...)` firmen automáticamente sus propias etiquetas generadas;
+  solo el script de tema anti-FOUC en `app.blade.php` necesita el nonce a mano.
+  `style-src` permite `unsafe-inline` porque el único uso real de estilos en línea es
+  el ancho de la barra de progreso de subida, que no puede ejecutar JavaScript.
 
 ### Cambiado
 
