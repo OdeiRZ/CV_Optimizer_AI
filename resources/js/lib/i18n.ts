@@ -20,6 +20,8 @@ interface Dictionary {
     submitting: string;
     submit: string;
     privacyNote: string;
+    howItWorksHeading: string;
+    howItWorksItems: { title: string; description: string }[];
 
     headTitleShow: string;
     backLink: string;
@@ -62,6 +64,24 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         submitting: 'Subiendo...',
         submit: 'Analizar mi CV',
         privacyNote: 'Tu CV se usa únicamente para generar este análisis.',
+        howItWorksHeading: 'Cómo funciona el análisis',
+        howItWorksItems: [
+            {
+                title: 'Formato y estructura',
+                description:
+                    'Revisamos que el diseño sea claro y que un sistema ATS pueda leerlo sin problemas.',
+            },
+            {
+                title: 'Impacto cuantificado',
+                description:
+                    'Buscamos verbos de acción y resultados medibles, no frases pasivas como "responsable de".',
+            },
+            {
+                title: 'Palabras clave',
+                description:
+                    'Si añades una oferta de trabajo, comparamos sus requisitos con tu CV para detectar huecos.',
+            },
+        ],
 
         headTitleShow: 'Resultado del análisis',
         backLink: '← Analizar otro CV',
@@ -103,6 +123,24 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         submitting: 'Uploading...',
         submit: 'Analyze my CV',
         privacyNote: 'Your CV is only used to generate this analysis.',
+        howItWorksHeading: 'How the analysis works',
+        howItWorksItems: [
+            {
+                title: 'Format & structure',
+                description:
+                    "We check that the layout is clear and something an ATS can actually parse.",
+            },
+            {
+                title: 'Quantified impact',
+                description:
+                    'We look for action verbs and measurable results, not passive phrases like "responsible for".',
+            },
+            {
+                title: 'Keywords',
+                description:
+                    'Add a job posting and we compare its requirements against your CV to spot gaps.',
+            },
+        ],
 
         headTitleShow: 'Analysis result',
         backLink: '← Analyze another CV',

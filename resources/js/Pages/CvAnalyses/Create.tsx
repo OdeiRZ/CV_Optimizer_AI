@@ -288,6 +288,27 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
                     <p className="mt-8 text-center text-xs text-slate-500 dark:text-slate-600">
                         {t.privacyNote}
                     </p>
+
+                    <div className="mt-16">
+                        <h2 className="text-center text-sm font-semibold uppercase tracking-wider text-slate-500">
+                            {t.howItWorksHeading}
+                        </h2>
+                        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                            {t.howItWorksItems.map((item) => (
+                                <div
+                                    key={item.title}
+                                    className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/60"
+                                >
+                                    <h3 className="font-medium text-slate-900 dark:text-slate-100">
+                                        {item.title}
+                                    </h3>
+                                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                                        {item.description}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
         </>

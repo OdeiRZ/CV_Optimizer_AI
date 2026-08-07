@@ -57,6 +57,10 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   siempre el contador real, no una aproximación.
 - `.github/dependabot.yml`: PRs semanales de actualización para Composer, npm,
   Docker y GitHub Actions.
+- Sección "Cómo funciona el análisis" en la página de subida: tres tarjetas breves
+  (formato/ATS, impacto cuantificado, palabras clave) que reflejan los mismos
+  criterios que evalúa el prompt del LLM en `AnalyzeCvJob`, para que quien llega a
+  la demo entienda qué se va a evaluar antes de subir un CV propio.
 
 ### Cambiado
 
