@@ -94,6 +94,11 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 - Se documenta en el README que la puntuación puede variar ligeramente entre distintos
   análisis del mismo CV: es el juicio de un LLM, no una fórmula determinista, y no es
   un bug si dos ejecuciones no coinciden exactamente.
+- Se documenta como limitación conocida (no como hueco pendiente) la decisión de no
+  implementar un historial de análisis para usuarios logueados: el modelo ya soporta
+  `user_id`, pero un historial "de verdad" chocaría con el almacenamiento efímero de
+  producción (se perdería sin aviso en cada redeploy/reinicio) y con la postura de
+  privacidad ya adoptada de no acumular indefinidamente CVs reales de terceros.
 
 ## [0.9.0] - 2026-08-05
 

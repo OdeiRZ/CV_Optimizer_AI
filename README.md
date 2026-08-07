@@ -112,6 +112,30 @@ La demo en vivo corre en el plan gratuito de [Render](https://render.com) median
 - La clave de la API del LLM se configura por variable de entorno, nunca en el código.
 - El schema de salida estructurada que se envía a Anthropic evita restricciones no soportadas por su validador (p. ej. `minimum`/`maximum` en campos numéricos, `minItems`/`maxItems` fuera de `{0, 1}` en arrays) para que el análisis nunca falle por un detalle de formato del proveedor.
 
+## Limitaciones conocidas
+
+- **Sin historial de análisis para usuarios logueados, a propósito.** El modelo ya
+  guarda `user_id` cuando hay sesión (se usa para el límite diario) y añadir un
+  listado "Mis análisis" sería trivial en sí mismo, pero se ha descartado
+  conscientemente por ahora, no por olvido:
+  - **Chocaría con el almacenamiento efímero de producción.** Como se explica en
+    [Despliegue](#despliegue), el filesystem de Render se reinicia en cada redeploy
+    y en cada reinicio manual, así que un historial "de verdad" desaparecería sin
+    aviso en cualquier momento — peor experiencia que no ofrecer historial en
+    absoluto, porque promete persistencia y la rompe en silencio.
+  - **Chocaría con la postura de privacidad ya documentada en [Seguridad](#seguridad).**
+    Ahora mismo el proyecto trata como una ventaja no acumular indefinidamente CVs
+    reales de terceros; un historial persistente exigiría lo contrario (retención a
+    largo plazo, y probablemente una función de borrado propia), lo cual es un
+    cambio de postura, no solo una pantalla nueva.
+
+  Implementarlo "de verdad" implicaría aceptar disco/base de datos persistente de
+  pago en Render — descartado antes precisamente por el coste y la caducidad a 30
+  días del Postgres gratuito — o documentar el historial como "mejor esfuerzo, puede
+  perderse en cualquier momento", que resulta una experiencia decepcionante para una
+  pieza de portfolio. Se deja documentado aquí como decisión consciente, no como
+  hueco pendiente.
+
 ## Changelog
 
 Historial de cambios en [CHANGELOG.md](CHANGELOG.md).
