@@ -104,7 +104,8 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
                                     key={option}
                                     type="button"
                                     onClick={() => selectLanguage(option)}
-                                    className={`rounded-md px-3 py-1.5 transition ${
+                                    aria-pressed={language === option}
+                                    className={`rounded-md px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 ${
                                         language === option
                                             ? 'bg-emerald-500 text-slate-950'
                                             : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
@@ -130,8 +131,15 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
                     </header>
 
                     {processing ? (
-                        <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-8 py-24 text-center shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-black/20">
-                            <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-500 dark:border-slate-700 dark:border-t-emerald-400" />
+                        <div
+                            role="status"
+                            aria-live="polite"
+                            className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-8 py-24 text-center shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-black/20"
+                        >
+                            <div
+                                aria-hidden="true"
+                                className="h-10 w-10 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-500 dark:border-slate-700 dark:border-t-emerald-400"
+                            />
                             <p className="mt-6 font-medium text-slate-800 dark:text-slate-200">
                                 {progress && (progress.percentage ?? 100) < 100
                                     ? t.submitting
@@ -158,6 +166,9 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
                         className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-black/20"
                     >
                         <div
+                            role="button"
+                            tabIndex={0}
+                            aria-label={data.cv ? data.cv.name : t.dropzoneHint}
                             onDragOver={(e) => {
                                 e.preventDefault();
                                 setIsDragging(true);
@@ -169,7 +180,13 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
                                 handleFiles(e.dataTransfer.files);
                             }}
                             onClick={() => fileInputRef.current?.click()}
-                            className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition ${
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    fileInputRef.current?.click();
+                                }
+                            }}
+                            className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
                                 isDragging
                                     ? 'border-emerald-400 bg-emerald-400/5'
                                     : 'border-slate-300 hover:border-slate-400 dark:border-slate-700 dark:hover:border-slate-600'
@@ -179,6 +196,8 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
                                 ref={fileInputRef}
                                 type="file"
                                 accept=".pdf,.docx"
+                                tabIndex={-1}
+                                aria-hidden="true"
                                 className="hidden"
                                 onChange={(e) => handleFiles(e.target.files)}
                             />
@@ -199,7 +218,7 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
                             )}
                         </div>
                         {errors.cv && (
-                            <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                            <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
                                 {errors.cv}
                             </p>
                         )}
@@ -209,7 +228,7 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
                                 type="button"
                                 onClick={loadSample}
                                 disabled={loadingSample}
-                                className="text-sm font-medium text-emerald-600 hover:text-emerald-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:hover:text-emerald-300"
+                                className="rounded text-sm font-medium text-emerald-600 hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:hover:text-emerald-300 dark:focus-visible:ring-offset-slate-900"
                             >
                                 {t.trySample}
                             </button>
@@ -217,7 +236,7 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
                                 href="/samples/sample-cv.pdf"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                                className="rounded text-sm font-medium text-slate-500 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:text-slate-400 dark:hover:text-slate-200 dark:focus-visible:ring-offset-slate-900"
                             >
                                 {t.viewSample}
                             </a>
@@ -241,7 +260,7 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
                                 className="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-100 dark:placeholder:text-slate-600"
                             />
                             {errors.job_description && (
-                                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                                <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
                                     {errors.job_description}
                                 </p>
                             )}
@@ -250,7 +269,7 @@ export default function Create({ maxUploadKb }: { maxUploadKb: number }) {
                         <button
                             type="submit"
                             disabled={!data.cv}
-                            className="mt-8 w-full rounded-lg bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="mt-8 w-full rounded-lg bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 dark:focus-visible:ring-offset-slate-900"
                         >
                             {t.submit}
                         </button>

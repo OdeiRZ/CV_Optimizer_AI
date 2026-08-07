@@ -21,6 +21,18 @@ function scoreColor(score: number): string {
 export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
     const [analysis, setAnalysis] = useState(initial);
     const { t } = useLanguage(initial.language);
+    const [linkCopied, setLinkCopied] = useState(false);
+
+    const copyLink = async () => {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
+        } catch {
+            // Clipboard access can fail (permissions, non-secure context);
+            // the URL is still visible in the address bar as a fallback.
+        }
+    };
 
     useEffect(() => {
         if (analysis.status !== 'pending' && analysis.status !== 'processing') {
@@ -46,7 +58,7 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                     <div className="mb-8 flex items-center justify-between">
                         <Link
                             href={route('cv-analyses.create')}
-                            className="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                            className="rounded text-sm text-slate-500 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:hover:text-slate-300 dark:focus-visible:ring-offset-slate-950"
                         >
                             {t.backLink}
                         </Link>
@@ -55,8 +67,15 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
 
                     {(analysis.status === 'pending' ||
                         analysis.status === 'processing') && (
-                        <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white py-24 text-center dark:border-slate-800 dark:bg-slate-900/60">
-                            <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-500 dark:border-slate-700 dark:border-t-emerald-400" />
+                        <div
+                            role="status"
+                            aria-live="polite"
+                            className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white py-24 text-center dark:border-slate-800 dark:bg-slate-900/60"
+                        >
+                            <div
+                                aria-hidden="true"
+                                className="h-10 w-10 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-500 dark:border-slate-700 dark:border-t-emerald-400"
+                            />
                             <p className="mt-6 font-medium text-slate-800 dark:text-slate-200">
                                 {t.analyzing(analysis.original_filename)}
                             </p>
@@ -67,13 +86,16 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                     )}
 
                     {analysis.status === 'failed' && (
-                        <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center dark:border-red-900/50 dark:bg-red-950/30">
+                        <div
+                            role="alert"
+                            className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center dark:border-red-900/50 dark:bg-red-950/30"
+                        >
                             <p className="font-medium text-red-700 dark:text-red-300">
                                 {analysis.error_message ?? t.genericError}
                             </p>
                             <Link
                                 href={route('cv-analyses.create')}
-                                className="mt-4 inline-block rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                                className="mt-4 inline-block rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:focus-visible:ring-offset-red-950"
                             >
                                 {t.retry}
                             </Link>
@@ -94,12 +116,22 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                                 <p className="mt-4 max-w-xl text-slate-700 dark:text-slate-300">
                                     {analysis.result.summary}
                                 </p>
-                                <a
-                                    href={route('cv-analyses.report', analysis.id)}
-                                    className="mt-6 inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800"
-                                >
-                                    {t.downloadPdf}
-                                </a>
+                                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                                    <a
+                                        href={route('cv-analyses.report', analysis.id)}
+                                        className="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800 dark:focus-visible:ring-offset-slate-900"
+                                    >
+                                        {t.downloadPdf}
+                                    </a>
+                                    <button
+                                        type="button"
+                                        onClick={copyLink}
+                                        aria-live="polite"
+                                        className="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800 dark:focus-visible:ring-offset-slate-900"
+                                    >
+                                        {linkCopied ? t.linkCopied : t.copyLink}
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="space-y-3">

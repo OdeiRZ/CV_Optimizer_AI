@@ -34,6 +34,22 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   todo el tiempo de espera ocurría ahí sin ningún feedback más allá del botón
   deshabilitado; ahora se sustituye el formulario por un spinner con el nombre del
   fichero, y un `beforeunload` avisa si se intenta cerrar la pestaña mientras tanto.
+- Reintento automático (1 reintento, 1s de espera) ante fallos transitorios de la
+  llamada al LLM: timeout de conexión, 5xx o 429 del proveedor, usando el soporte
+  nativo de reintentos HTTP de Prism (`withClientRetry`). No reintenta en errores
+  4xx (p. ej. una petición mal formada), que fallarían igual una segunda vez y solo
+  duplicarían el coste de la llamada.
+- Botón "Copiar enlace" en la página de resultado, para compartir el análisis sin
+  tener que seleccionar la URL manualmente.
+- Meta tags Open Graph y Twitter Card (título, descripción) en el layout base, para
+  que el enlace se vea bien al compartirlo en redes o chats en vez de mostrar solo
+  el título "Laravel" o una tarjeta vacía.
+- Pase de accesibilidad: la zona de subida de CV pasa de un `<div>` con `onClick` a
+  un control real navegable y activable por teclado (`role="button"`, `tabIndex`,
+  `Enter`/`Espacio`); los estados de carga y error usan `role="status"`/`role="alert"`
+  con `aria-live` para que los lectores de pantalla los anuncien; y todos los
+  controles interactivos (botones, enlaces, selector de idioma) tienen un anillo de
+  foco visible en vez de depender del estilo por defecto del navegador.
 
 ### Cambiado
 

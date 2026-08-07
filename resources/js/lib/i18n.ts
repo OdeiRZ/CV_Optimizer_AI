@@ -29,6 +29,8 @@ interface Dictionary {
     retry: string;
     scoreLabel: string;
     downloadPdf: string;
+    copyLink: string;
+    linkCopied: string;
     cvPreviewHeading: string;
     cvPreviewUnavailable: string;
     sectionsHeading: string;
@@ -67,6 +69,8 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         retry: 'Volver a intentarlo',
         scoreLabel: 'Puntuación sobre 100',
         downloadPdf: 'Descargar informe (PDF)',
+        copyLink: 'Copiar enlace',
+        linkCopied: 'Enlace copiado',
         cvPreviewHeading: 'Tu CV',
         cvPreviewUnavailable:
             'La vista previa no está disponible para archivos DOCX, solo para PDF.',
@@ -104,6 +108,8 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         retry: 'Try again',
         scoreLabel: 'Score out of 100',
         downloadPdf: 'Download report (PDF)',
+        copyLink: 'Copy link',
+        linkCopied: 'Link copied',
         cvPreviewHeading: 'Your CV',
         cvPreviewUnavailable: 'Preview is only available for PDF, not DOCX, files.',
         sectionsHeading: 'Feedback by section',
