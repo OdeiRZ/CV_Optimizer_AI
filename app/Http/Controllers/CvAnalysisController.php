@@ -46,7 +46,7 @@ class CvAnalysisController extends Controller
         ]);
 
         try {
-            AnalyzeCvJob::dispatch($analysis);
+            AnalyzeCvJob::dispatch($analysis, CvAnalysisRateLimiter::key($request));
         } catch (Throwable) {
             // With QUEUE_CONNECTION=sync (production), the job runs inline
             // here and rethrows after recording itself as Failed, so a real

@@ -210,12 +210,155 @@ it('completes the analysis and stores the structured result when the job runs', 
         };
     });
 
-    (new AnalyzeCvJob($analysis))->handle($this->app->make(\App\Services\CvTextExtractor::class));
+    (new AnalyzeCvJob($analysis, 'test-visitor'))->handle($this->app->make(\App\Services\CvTextExtractor::class));
 
     $analysis->refresh();
 
     expect($analysis->status)->toBe(CvAnalysisStatus::Completed)
         ->and($analysis->result)->toBe($fakeResult);
+});
+
+it('reuses the cached result when the same visitor resubmits the same CV and job description', function () {
+    Storage::fake('local');
+
+    $this->app->bind(\App\Services\CvTextExtractor::class, function () {
+        return new class extends \App\Services\CvTextExtractor
+        {
+            public function extract(string $disk, string $path): string
+            {
+                return 'John Doe. Responsible for maintaining applications.';
+            }
+        };
+    });
+
+    $fakeResult = [
+        'score' => 80,
+        'summary' => 'Solid CV.',
+        'sections' => [['name' => 'Format', 'severity' => 'ok', 'feedback' => 'Fine.']],
+        'missing_keywords' => [],
+        'bullet_rewrites' => [],
+    ];
+
+    $fake = Prism::fake([
+        StructuredResponseFake::make()->withStructured($fakeResult),
+    ]);
+
+    $extractor = $this->app->make(\App\Services\CvTextExtractor::class);
+
+    $first = CvAnalysis::create([
+        'original_filename' => 'cv.pdf',
+        'file_path' => UploadedFile::fake()->create('cv.pdf', 10)->store('cv-uploads', 'local'),
+        'job_description' => 'Backend engineer',
+        'status' => CvAnalysisStatus::Pending,
+    ]);
+    (new AnalyzeCvJob($first, 'same-visitor'))->handle($extractor);
+
+    // A second, separate analysis - same visitor identity, same CV text
+    // (the stub extractor always returns the same string), same job
+    // description: this is the "accidental double-submit" case the cache
+    // exists for.
+    $second = CvAnalysis::create([
+        'original_filename' => 'cv.pdf',
+        'file_path' => UploadedFile::fake()->create('cv.pdf', 10)->store('cv-uploads', 'local'),
+        'job_description' => 'Backend engineer',
+        'status' => CvAnalysisStatus::Pending,
+    ]);
+    (new AnalyzeCvJob($second, 'same-visitor'))->handle($extractor);
+
+    $second->refresh();
+
+    expect($second->status)->toBe(CvAnalysisStatus::Completed)
+        ->and($second->result)->toBe($fakeResult);
+    $fake->assertCallCount(1);
+});
+
+it('does not reuse the cached result for a different visitor with the same CV text', function () {
+    Storage::fake('local');
+
+    $this->app->bind(\App\Services\CvTextExtractor::class, function () {
+        return new class extends \App\Services\CvTextExtractor
+        {
+            public function extract(string $disk, string $path): string
+            {
+                return 'Jane Doe. Led backend migrations.';
+            }
+        };
+    });
+
+    $fake = Prism::fake([
+        StructuredResponseFake::make()->withStructured(['score' => 60, 'summary' => 'A', 'sections' => [], 'missing_keywords' => [], 'bullet_rewrites' => []]),
+        StructuredResponseFake::make()->withStructured(['score' => 65, 'summary' => 'B', 'sections' => [], 'missing_keywords' => [], 'bullet_rewrites' => []]),
+    ]);
+
+    $extractor = $this->app->make(\App\Services\CvTextExtractor::class);
+
+    $first = CvAnalysis::create([
+        'original_filename' => 'cv.pdf',
+        'file_path' => UploadedFile::fake()->create('cv.pdf', 10)->store('cv-uploads', 'local'),
+        'status' => CvAnalysisStatus::Pending,
+    ]);
+    (new AnalyzeCvJob($first, 'visitor-a'))->handle($extractor);
+
+    // Same CV text (e.g. two people both submitting the bundled sample CV
+    // unmodified), but a different visitor identity - must not see each
+    // other's result.
+    $second = CvAnalysis::create([
+        'original_filename' => 'cv.pdf',
+        'file_path' => UploadedFile::fake()->create('cv.pdf', 10)->store('cv-uploads', 'local'),
+        'status' => CvAnalysisStatus::Pending,
+    ]);
+    (new AnalyzeCvJob($second, 'visitor-b'))->handle($extractor);
+
+    $first->refresh();
+    $second->refresh();
+
+    expect($first->result['score'])->toBe(60)
+        ->and($second->result['score'])->toBe(65);
+    $fake->assertCallCount(2);
+});
+
+it('does not reuse the cached result when the job description differs', function () {
+    Storage::fake('local');
+
+    $this->app->bind(\App\Services\CvTextExtractor::class, function () {
+        return new class extends \App\Services\CvTextExtractor
+        {
+            public function extract(string $disk, string $path): string
+            {
+                return 'John Doe. Responsible for maintaining applications.';
+            }
+        };
+    });
+
+    $fake = Prism::fake([
+        StructuredResponseFake::make()->withStructured(['score' => 60, 'summary' => 'A', 'sections' => [], 'missing_keywords' => [], 'bullet_rewrites' => []]),
+        StructuredResponseFake::make()->withStructured(['score' => 65, 'summary' => 'B', 'sections' => [], 'missing_keywords' => [], 'bullet_rewrites' => []]),
+    ]);
+
+    $extractor = $this->app->make(\App\Services\CvTextExtractor::class);
+
+    $first = CvAnalysis::create([
+        'original_filename' => 'cv.pdf',
+        'file_path' => UploadedFile::fake()->create('cv.pdf', 10)->store('cv-uploads', 'local'),
+        'job_description' => 'Backend engineer',
+        'status' => CvAnalysisStatus::Pending,
+    ]);
+    (new AnalyzeCvJob($first, 'same-visitor'))->handle($extractor);
+
+    $second = CvAnalysis::create([
+        'original_filename' => 'cv.pdf',
+        'file_path' => UploadedFile::fake()->create('cv.pdf', 10)->store('cv-uploads', 'local'),
+        'job_description' => 'Frontend engineer',
+        'status' => CvAnalysisStatus::Pending,
+    ]);
+    (new AnalyzeCvJob($second, 'same-visitor'))->handle($extractor);
+
+    $first->refresh();
+    $second->refresh();
+
+    expect($first->result['score'])->toBe(60)
+        ->and($second->result['score'])->toBe(65);
+    $fake->assertCallCount(2);
 });
 
 it('marks the analysis as failed when text extraction throws', function () {
@@ -241,7 +384,7 @@ it('marks the analysis as failed when text extraction throws', function () {
 
     Prism::fake();
 
-    $job = new AnalyzeCvJob($analysis);
+    $job = new AnalyzeCvJob($analysis, 'test-visitor');
 
     expect(fn () => $job->handle($this->app->make(\App\Services\CvTextExtractor::class)))
         ->toThrow(RuntimeException::class);

@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Facades\Prism;
 use Throwable;
@@ -29,6 +30,10 @@ class AnalyzeCvJob implements ShouldQueue
 
     public function __construct(
         public CvAnalysis $analysis,
+        // Same visitor identity the rate limiter uses (App\Support\CvAnalysisRateLimiter::key()),
+        // captured from the request at dispatch time since a queued job has
+        // no request to read it from later.
+        public string $cacheIdentity,
     ) {}
 
     public function handle(CvTextExtractor $extractor): void
@@ -37,6 +42,17 @@ class AnalyzeCvJob implements ShouldQueue
 
         try {
             $cvText = $extractor->extract('local', $this->analysis->file_path);
+
+            $cacheKey = $this->resultCacheKey($cvText);
+
+            if ($cached = Cache::get($cacheKey)) {
+                $this->analysis->update([
+                    'status' => CvAnalysisStatus::Completed,
+                    'result' => $cached,
+                ]);
+
+                return;
+            }
 
             $response = Prism::structured()
                 ->using(config('cv.analysis_provider'), config('cv.analysis_model'))
@@ -57,6 +73,12 @@ class AnalyzeCvJob implements ShouldQueue
                     when: static::shouldRetryHttpFailure(...),
                 )
                 ->asStructured();
+
+            Cache::put(
+                $cacheKey,
+                $response->structured,
+                now()->addMinutes(config('cv.result_cache_ttl_minutes')),
+            );
 
             $this->analysis->update([
                 'status' => CvAnalysisStatus::Completed,
@@ -91,6 +113,24 @@ class AnalyzeCvJob implements ShouldQueue
 
         return $e instanceof RequestException
             && ($e->response->serverError() || $e->response->status() === 429);
+    }
+
+    /**
+     * Scoped to the same visitor (matching the rate limiter's own identity)
+     * plus the exact CV text, job description, and language - so a retry
+     * or accidental double-submit reuses the result instead of paying for
+     * another LLM call, but the cache never serves one visitor's analysis
+     * to another, even when two people happen to submit byte-identical CV
+     * text (e.g. the bundled sample CV via "Try with a sample CV").
+     */
+    protected function resultCacheKey(string $cvText): string
+    {
+        return 'cv-analysis-result:'.hash('sha256', implode('|', [
+            $this->cacheIdentity,
+            $this->analysis->language->value,
+            $this->analysis->job_description ?? '',
+            $cvText,
+        ]));
     }
 
     protected function buildPrompt(string $cvText, ?string $jobDescription): string

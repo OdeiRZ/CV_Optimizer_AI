@@ -106,6 +106,14 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   contra el servidor de desarrollo de PHP (de un solo hilo) que `page.goto()` de
   Puppeteer no provoca. Queda como limitación conocida en vez de seguir
   investigando a ciegas gastando ciclos de CI.
+- Caché de resultado de análisis (`config('cv.result_cache_ttl_minutes')`, 20 min
+  por defecto) para no facturar dos veces un reenvío accidental (doble clic, recarga)
+  del mismo CV con la misma oferta e idioma por la misma persona. La clave combina
+  la misma identidad de visitante que ya usa el limitador de tasa
+  (`App\Support\CvAnalysisRateLimiter::key()`) con un hash del texto extraído, la
+  oferta y el idioma — nunca solo el contenido — precisamente para que dos personas
+  distintas que suban un CV con el mismo texto (p. ej. ambas usando el CV de
+  ejemplo sin modificar) no reciban el resultado cacheado la una de la otra.
 
 ### Cambiado
 
