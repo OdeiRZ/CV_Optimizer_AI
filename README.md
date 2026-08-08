@@ -111,7 +111,7 @@ La demo en vivo corre en el plan gratuito de [Render](https://render.com) median
 - Esa misma confianza total en los proxies (`at: '*'`) tiene una contrapartida: la app corre detrás de Cloudflare además del proxy interno de Render, y con todos los saltos marcados como confiables, `$request->ip()` deja de identificar al visitante real y devuelve la IP interna del balanceador de Render (que ni siquiera es estable entre peticiones). Esto invalidaba en silencio el límite diario por IP — 11 peticiones reales seguidas se procesaron sin bloquear ninguna antes de detectarlo. La cabecera `CF-Connecting-IP` de Cloudflare sí lleva la IP real del visitante, así que el limitador la usa como fuente primaria (ver `App\Providers\AppServiceProvider`).
 - `LOG_CHANNEL=stderr` para que las excepciones aparezcan en el visor de logs de Render (que solo captura stdout/stderr, no ficheros).
 - GitHub Actions (`.github/workflows/tests.yml`) comprueba el estilo de código con Laravel Pint (`vendor/bin/pint --test`) y análisis estático con Larastan (`vendor/bin/phpstan analyse`, nivel 5) antes de la suite de tests, y con ESLint (`npm run lint`, tipado + reglas de React/hooks/accesibilidad vía `typescript-eslint`, `eslint-plugin-react`, `eslint-plugin-react-hooks` y `eslint-plugin-jsx-a11y`) antes del build del frontend, ejecuta la suite completa en cada push a `main`, y a continuación un chequeo de accesibilidad con axe-core (`npm run a11y`, sobre la página de subida y una página de resultado completada), un test E2E de humo (`npm run e2e`, subida → página de resultado) y Lighthouse CI (`npm run lighthouse`: rendimiento, accesibilidad, buenas prácticas y SEO, solo sobre la página de subida — ver nota en el CHANGELOG), usando el Chrome ya instalado en el runner (sin descargar Chromium propio).
-- Dependabot (`.github/dependabot.yml`) abre PRs semanales de actualización para Composer, npm, Docker y GitHub Actions. La rama `main` exige que el check `test` pase antes de fusionar cualquier PR (incluidas las de Dependabot) y bloquea el borrado o el force-push, salvo bypass explícito de administrador.
+- Dependabot (`.github/dependabot.yml`) abre PRs semanales de actualización para Composer, npm, Docker y GitHub Actions. La rama `main` exige que el check `test` pase antes de fusionar cualquier PR (incluidas las de Dependabot) y bloquea el borrado o el force-push, salvo bypass explícito de administrador. No se fusionan a ciegas: la actualización mayor de `inertiajs/inertia-laravel` (2.x → 3.x), por ejemplo, se probó a fondo (suite completa + navegación real subida→resultado) antes de fusionarla por tocar el render de cada página; ver el CHANGELOG para el detalle de qué se fusionó y qué se dejó pendiente a propósito (y por qué).
 
 ## Seguridad
 
@@ -166,6 +166,15 @@ La demo en vivo corre en el plan gratuito de [Render](https://render.com) median
   en este entorno de CI, no en esta aplicación. Se documenta como limitación
   conocida, respaldada por evidencia, en vez de forzar más ciclos de CI a ciegas; el
   chequeo se queda limitado a la página de subida, que es la que ve todo visitante.
+
+- **El `Dockerfile` no se construye en ningún paso de CI.** `.github/workflows/tests.yml`
+  ejecuta la suite y el build del frontend directamente en el runner, no dentro de la
+  imagen — la única vez que el `Dockerfile` se construye de verdad es en el propio
+  despliegue de Render. Por eso las actualizaciones de Dependabot de las imágenes base
+  (`php:8.3-cli-alpine`, `node:20-alpine`) se dejan sin fusionar hasta poder probarlas:
+  sin Docker en el entorno de desarrollo ni un paso de CI que las valide, fusionarlas
+  a ciegas sería arriesgar la imagen que sirve producción sin ninguna red de
+  seguridad.
 
 ## Changelog
 
