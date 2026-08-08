@@ -92,20 +92,14 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   del registro y redirect: la parte del flujo que de verdad puede romperse por un
   cambio en el código, no por la disponibilidad de la API externa.
 - Lighthouse CI (`npm run lighthouse`, `lighthouserc.json`) contra la página de
-  subida, con umbrales por categoría en vez de auditorías individuales (más
-  frágiles): accesibilidad, buenas prácticas y SEO fallan el build por debajo de
-  0.9; rendimiento solo avisa (`warn`) por debajo de 0.5, ya que la puntuación de
-  rendimiento fluctúa según la carga del runner compartido de GitHub Actions y no
-  es un buen motivo para bloquear el build. Inicialmente incluía también una página
-  de resultado completada, pero se retiró: dos ejecuciones seguidas en CI mostraron
-  al Chrome de Lighthouse recibiendo un 404 real de `php artisan serve` en esa URL,
-  la misma que el chequeo de accesibilidad (vía Puppeteer) acababa de cargar bien
-  segundos antes en el mismo job, contra una fila cuya existencia un paso dedicado
-  acababa de reconfirmar justo antes. No es un problema del ciclo de vida del
-  fixture, sino algo específico de cómo el Chrome propio de Lighthouse navega
-  contra el servidor de desarrollo de PHP (de un solo hilo) que `page.goto()` de
-  Puppeteer no provoca. Queda como limitación conocida en vez de seguir
-  investigando a ciegas gastando ciclos de CI.
+  subida y una página de resultado completada, con umbrales por categoría en vez de
+  auditorías individuales (más frágiles): accesibilidad, buenas prácticas y SEO
+  fallan el build por debajo de 0.9; rendimiento solo avisa (`warn`) por debajo de
+  0.5, ya que la puntuación de rendimiento fluctúa según la carga del runner
+  compartido de GitHub Actions y no es un buen motivo para bloquear el build.
+  (La página de resultado se retiró temporalmente por un 404 intermitente y se
+  volvió a añadir al encontrar la causa real — ver el arreglo de concurrencia de
+  `php artisan serve` más abajo.)
 - Caché de resultado de análisis (`config('cv.result_cache_ttl_minutes')`, 20 min
   por defecto) para no facturar dos veces un reenvío accidental (doble clic, recarga)
   del mismo CV con la misma oferta e idioma por la misma persona. La clave combina
@@ -158,6 +152,19 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   altura fija de 600px que en una pantalla de móvil típica ocupaba la mayor parte de
   la pantalla antes de llegar al feedback. Ahora es de 380px por debajo del punto de
   corte `sm` y 600px a partir de ahí.
+- `php artisan serve` en producción corría con un único worker
+  (`PHP_CLI_SERVER_WORKERS=1`, el valor por defecto de Laravel), es decir, una sola
+  petición HTTP en vuelo a la vez. Con `QUEUE_CONNECTION=sync`, eso incluye toda la
+  duración de la llamada al LLM: mientras un análisis estaba en curso, cualquier otro
+  visitante quedaba bloqueado sin poder ni siquiera cargar la portada. Encontrado al
+  investigar por qué Lighthouse CI recibía un 404 en una URL que Puppeteer acababa de
+  cargar bien segundos antes en el mismo job — la causa real no era el fixture, sino
+  esta falta de concurrencia. El Dockerfile ahora fija `PHP_CLI_SERVER_WORKERS=4` y
+  añade `--no-reload` (imprescindible para que Laravel respete esa variable). Como
+  contrapartida directa de permitir más concurrencia, `config('database.connections.sqlite.busy_timeout')`
+  pasa de `null` a 5000 ms (configurable vía `DB_BUSY_TIMEOUT`), para que dos
+  escrituras casi simultáneas esperen brevemente al `lock` de SQLite en vez de fallar
+  al instante con "database is locked".
 
 ### Documentado
 

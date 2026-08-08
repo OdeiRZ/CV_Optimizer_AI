@@ -52,7 +52,15 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 USER www-data
 
 ENV PORT=8080
+# php artisan serve defaults to a single worker (PHP_CLI_SERVER_WORKERS=1),
+# meaning exactly one HTTP request can be in flight at a time - with
+# QUEUE_CONNECTION=sync, that includes the whole duration of an LLM call, so
+# a single in-progress analysis would otherwise block every other visitor
+# from loading even the homepage. --no-reload is required for Laravel to
+# honor PHP_CLI_SERVER_WORKERS at all, and has no downside here since files
+# never change at runtime in a built image.
+ENV PHP_CLI_SERVER_WORKERS=4
 EXPOSE 8080
 
 ENTRYPOINT ["entrypoint.sh"]
-CMD php artisan serve --host=0.0.0.0 --port=${PORT}
+CMD php artisan serve --host=0.0.0.0 --port=${PORT} --no-reload

@@ -73,8 +73,17 @@ jobs:
                   );
                   PHP
 
+            # PHP_CLI_SERVER_WORKERS + --no-reload: php artisan serve defaults
+            # to a single worker, so only one HTTP request can be in flight
+            # at a time. That single-threadedness is the likely real cause of
+            # an earlier mystery here (Lighthouse's Chrome got a genuine 404
+            # on a URL puppeteer had just loaded fine moments earlier in the
+            # same job) - matches the same production concurrency bug this
+            # fixed in the Dockerfile.
             - name: Start server for browser checks
-              run: php artisan serve --port=8000 &
+              env:
+                  PHP_CLI_SERVER_WORKERS: 4
+              run: php artisan serve --port=8000 --no-reload &
 
             - name: Wait for server
               run: npx wait-on http://127.0.0.1:8000
@@ -94,18 +103,12 @@ jobs:
                   export PUPPETEER_EXECUTABLE_PATH="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser)"
                   npm run e2e
 
-            # Scoped to the upload page only. Two CI runs in a row showed
-            # Lighthouse's Chrome getting a genuine 404 from php artisan
-            # serve for /cv-analyses/{id}, on the exact same URL axe-core
-            # (via puppeteer-core) had just loaded successfully moments
-            # earlier in the same job, against a row a dedicated step had
-            # just re-confirmed exists. Not a fixture-lifecycle problem -
-            # something about how Lighthouse's own Chrome/chrome-launcher
-            # navigates against PHP's single-threaded dev server specifically,
-            # that axe's/puppeteer's plain page.goto() doesn't hit. Left as a
-            # known gap rather than spending more CI cycles guessing blindly;
-            # the upload page is the one every visitor actually lands on.
+            # Re-includes the results page: the earlier 404-on-the-fixture
+            # mystery here was almost certainly the single-worker dev server
+            # above, now fixed with PHP_CLI_SERVER_WORKERS.
             - name: Run Lighthouse CI (performance, accessibility, best practices, SEO)
               run: |
                   export CHROME_PATH="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser)"
-                  npx lhci autorun --collect.url=http://127.0.0.1:8000/
+                  npx lhci autorun \
+                      --collect.url=http://127.0.0.1:8000/ \
+                      --collect.url=http://127.0.0.1:8000/cv-analyses/01ARZ3NDEKTSV4RRFFQ69G5FAV
