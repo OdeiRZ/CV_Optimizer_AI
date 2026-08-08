@@ -38,9 +38,11 @@ const Trigger = ({ children }: PropsWithChildren) => {
 
     return (
         <>
+            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- transparent wrapper around a real <button> child; keyboard activation of that button already dispatches a bubbling click event here */}
             <div onClick={toggleOpen}>{children}</div>
 
             {open && (
+                // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- invisible click-outside-to-close overlay, not a real interactive control
                 <div
                     className="fixed inset-0 z-40"
                     onClick={() => setOpen(false)}
@@ -87,6 +89,7 @@ const Content = ({
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
             >
+                {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- closes the menu when any content inside it is clicked (e.g. a Link), not itself a control */}
                 <div
                     className={`absolute z-50 mt-2 rounded-md shadow-lg ${alignmentClasses} ${widthClasses}`}
                     onClick={() => setOpen(false)}

@@ -174,6 +174,17 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   `\` en vez de `use`, formato de llaves). Corregidas con `vendor/bin/pint`, y ahora
   `.github/workflows/tests.yml` ejecuta `vendor/bin/pint --test` antes de la suite,
   así que un estilo inconsistente rompe el CI en vez de acumularse sin control.
+- El frontend TypeScript/React no tenía ningún linter, solo comprobación de tipos
+  (`tsc`). Se añade ESLint (config plana, `eslint.config.js`) con `typescript-eslint`,
+  `eslint-plugin-react`, `eslint-plugin-react-hooks` y `eslint-plugin-jsx-a11y`, y un
+  nuevo script `npm run lint` que también corre en CI antes de `npm run build`. Al
+  activarlo aparecieron problemas reales heredados del scaffolding de Laravel Breeze:
+  una etiqueta sin asociar a su control en el login (el `<Checkbox>` envuelve un
+  `<input>` nativo pero jsx-a11y no lo sabía sin configuración explícita), una imagen
+  sin `alt` y varios apóstrofes sin escapar en JSX. De paso, se elimina
+  `resources/js/Pages/Welcome.tsx`: la página de bienvenida por defecto de Laravel,
+  que nunca llegó a enlazarse desde ninguna ruta (la portada real es
+  `CvAnalysisController::create`) y no tenía ninguna otra referencia en el repo.
 
 ### Documentado
 
