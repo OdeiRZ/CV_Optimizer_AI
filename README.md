@@ -92,8 +92,9 @@ La aplicación queda disponible en `http://localhost:8080`. `docker-compose.yml`
 
 ```bash
 php artisan test
-vendor/bin/pint --test   # estilo de código PHP (Laravel Pint), sin escribir cambios
-npm run lint             # estilo de código TS/React (ESLint)
+vendor/bin/pint --test        # estilo de código PHP (Laravel Pint), sin escribir cambios
+vendor/bin/phpstan analyse    # análisis estático PHP (Larastan/PHPStan, nivel 5)
+npm run lint                  # estilo de código TS/React (ESLint)
 ```
 
 La suite mockea el proveedor LLM (`Prism::fake()`), por lo que no realiza llamadas reales a la API.
@@ -109,7 +110,7 @@ La demo en vivo corre en el plan gratuito de [Render](https://render.com) median
 - Como Render termina TLS en su proxy y reenvía por HTTP plano al contenedor, es imprescindible `$middleware->trustProxies(at: '*')` en `bootstrap/app.php`; sin esto, Laravel genera URLs de assets en `http://` bajo una página `https://` y el navegador las bloquea.
 - Esa misma confianza total en los proxies (`at: '*'`) tiene una contrapartida: la app corre detrás de Cloudflare además del proxy interno de Render, y con todos los saltos marcados como confiables, `$request->ip()` deja de identificar al visitante real y devuelve la IP interna del balanceador de Render (que ni siquiera es estable entre peticiones). Esto invalidaba en silencio el límite diario por IP — 11 peticiones reales seguidas se procesaron sin bloquear ninguna antes de detectarlo. La cabecera `CF-Connecting-IP` de Cloudflare sí lleva la IP real del visitante, así que el limitador la usa como fuente primaria (ver `App\Providers\AppServiceProvider`).
 - `LOG_CHANNEL=stderr` para que las excepciones aparezcan en el visor de logs de Render (que solo captura stdout/stderr, no ficheros).
-- GitHub Actions (`.github/workflows/tests.yml`) comprueba el estilo de código con Laravel Pint (`vendor/bin/pint --test`) antes de la suite de tests y con ESLint (`npm run lint`, tipado + reglas de React/hooks/accesibilidad vía `typescript-eslint`, `eslint-plugin-react`, `eslint-plugin-react-hooks` y `eslint-plugin-jsx-a11y`) antes del build del frontend, ejecuta la suite completa en cada push a `main`, y a continuación un chequeo de accesibilidad con axe-core (`npm run a11y`, sobre la página de subida y una página de resultado completada), un test E2E de humo (`npm run e2e`, subida → página de resultado) y Lighthouse CI (`npm run lighthouse`: rendimiento, accesibilidad, buenas prácticas y SEO, solo sobre la página de subida — ver nota en el CHANGELOG), usando el Chrome ya instalado en el runner (sin descargar Chromium propio).
+- GitHub Actions (`.github/workflows/tests.yml`) comprueba el estilo de código con Laravel Pint (`vendor/bin/pint --test`) y análisis estático con Larastan (`vendor/bin/phpstan analyse`, nivel 5) antes de la suite de tests, y con ESLint (`npm run lint`, tipado + reglas de React/hooks/accesibilidad vía `typescript-eslint`, `eslint-plugin-react`, `eslint-plugin-react-hooks` y `eslint-plugin-jsx-a11y`) antes del build del frontend, ejecuta la suite completa en cada push a `main`, y a continuación un chequeo de accesibilidad con axe-core (`npm run a11y`, sobre la página de subida y una página de resultado completada), un test E2E de humo (`npm run e2e`, subida → página de resultado) y Lighthouse CI (`npm run lighthouse`: rendimiento, accesibilidad, buenas prácticas y SEO, solo sobre la página de subida — ver nota en el CHANGELOG), usando el Chrome ya instalado en el runner (sin descargar Chromium propio).
 - Dependabot (`.github/dependabot.yml`) abre PRs semanales de actualización para Composer, npm, Docker y GitHub Actions. La rama `main` exige que el check `test` pase antes de fusionar cualquier PR (incluidas las de Dependabot) y bloquea el borrado o el force-push, salvo bypass explícito de administrador.
 
 ## Seguridad

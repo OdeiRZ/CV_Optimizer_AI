@@ -36,6 +36,9 @@ jobs:
             - name: Check PHP code style (Pint)
               run: vendor/bin/pint --test
 
+            - name: Run static analysis (Larastan)
+              run: vendor/bin/phpstan analyse --no-progress
+
             - name: Install Node dependencies
               run: npm ci
 

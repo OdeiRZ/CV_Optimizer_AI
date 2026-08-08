@@ -1,0 +1,21 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+        - bootstrap
+        - config
+        - database
+        - routes
+
+    level: 5
+
+    # CvAnalysis declares its enum casts via the `casts()` method (Laravel
+    # 11+ convention) rather than the legacy `$casts` property; Larastan
+    # only reads that method's literal return array with this on, otherwise
+    # it infers `array` and treats every cast attribute as a plain string.
+    parseModelCastsMethod: true
+
+    excludePaths:
+        - bootstrap/cache

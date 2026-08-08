@@ -44,3 +44,11 @@ test('email is not verified with invalid hash', function () {
 
     expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
 });
+
+test('an unverified user is redirected away from routes behind the verified middleware', function () {
+    $user = User::factory()->unverified()->create();
+
+    $response = $this->actingAs($user)->get('/dashboard');
+
+    $response->assertRedirect(route('verification.notice'));
+});

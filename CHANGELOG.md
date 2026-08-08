@@ -107,6 +107,29 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   oferta y el idioma — nunca solo el contenido — precisamente para que dos personas
   distintas que suban un CV con el mismo texto (p. ej. ambas usando el CV de
   ejemplo sin modificar) no reciban el resultado cacheado la una de la otra.
+- Laravel Pint (`laravel/pint`) estaba instalado como dependencia de desarrollo pero
+  nunca se ejecutaba: había violaciones reales de estilo sin detectar en 4 ficheros
+  (imports desordenados, `new PdfParser()` en vez de `new PdfParser`, uso de FQCN con
+  `\` en vez de `use`, formato de llaves). Corregidas con `vendor/bin/pint`, y ahora
+  `.github/workflows/tests.yml` ejecuta `vendor/bin/pint --test` antes de la suite,
+  así que un estilo inconsistente rompe el CI en vez de acumularse sin control.
+- El frontend TypeScript/React no tenía ningún linter, solo comprobación de tipos
+  (`tsc`). Se añade ESLint (config plana, `eslint.config.js`) con `typescript-eslint`,
+  `eslint-plugin-react`, `eslint-plugin-react-hooks` y `eslint-plugin-jsx-a11y`, y un
+  nuevo script `npm run lint` que también corre en CI antes de `npm run build`. Al
+  activarlo aparecieron problemas reales heredados del scaffolding de Laravel Breeze:
+  una etiqueta sin asociar a su control en el login (el `<Checkbox>` envuelve un
+  `<input>` nativo pero jsx-a11y no lo sabía sin configuración explícita), una imagen
+  sin `alt` y varios apóstrofes sin escapar en JSX. De paso, se elimina
+  `resources/js/Pages/Welcome.tsx`: la página de bienvenida por defecto de Laravel,
+  que nunca llegó a enlazarse desde ninguna ruta (la portada real es
+  `CvAnalysisController::create`) y no tenía ninguna otra referencia en el repo.
+- Se añade Larastan (PHPStan para Laravel, nivel 5, `phpstan.neon`) como análisis
+  estático del backend, con un nuevo paso en CI (`vendor/bin/phpstan analyse`) antes
+  de la suite de tests. La configuración activa `parseModelCastsMethod: true`: sin
+  ella, Larastan no reconoce los casts a enum declarados vía el método `casts()`
+  (convención de Laravel 11+, la que usa `CvAnalysis`) y trata esos atributos como
+  `string`, generando falsos positivos en cada acceso a `->status`/`->language`.
 
 ### Cambiado
 
@@ -167,24 +190,15 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   pasa de `null` a 5000 ms (configurable vía `DB_BUSY_TIMEOUT`), para que dos
   escrituras casi simultáneas esperen brevemente al `lock` de SQLite en vez de fallar
   al instante con "database is locked".
-
-- Laravel Pint (`laravel/pint`) estaba instalado como dependencia de desarrollo pero
-  nunca se ejecutaba: había violaciones reales de estilo sin detectar en 4 ficheros
-  (imports desordenados, `new PdfParser()` en vez de `new PdfParser`, uso de FQCN con
-  `\` en vez de `use`, formato de llaves). Corregidas con `vendor/bin/pint`, y ahora
-  `.github/workflows/tests.yml` ejecuta `vendor/bin/pint --test` antes de la suite,
-  así que un estilo inconsistente rompe el CI en vez de acumularse sin control.
-- El frontend TypeScript/React no tenía ningún linter, solo comprobación de tipos
-  (`tsc`). Se añade ESLint (config plana, `eslint.config.js`) con `typescript-eslint`,
-  `eslint-plugin-react`, `eslint-plugin-react-hooks` y `eslint-plugin-jsx-a11y`, y un
-  nuevo script `npm run lint` que también corre en CI antes de `npm run build`. Al
-  activarlo aparecieron problemas reales heredados del scaffolding de Laravel Breeze:
-  una etiqueta sin asociar a su control en el login (el `<Checkbox>` envuelve un
-  `<input>` nativo pero jsx-a11y no lo sabía sin configuración explícita), una imagen
-  sin `alt` y varios apóstrofes sin escapar en JSX. De paso, se elimina
-  `resources/js/Pages/Welcome.tsx`: la página de bienvenida por defecto de Laravel,
-  que nunca llegó a enlazarse desde ninguna ruta (la portada real es
-  `CvAnalysisController::create`) y no tenía ninguna otra referencia en el repo.
+- `App\Models\User` no implementaba la interfaz `MustVerifyEmail` (el `use` estaba
+  comentado). El middleware `verified` que protege `/dashboard` solo hace cumplir la
+  verificación de email cuando el usuario implementa esa interfaz; al no implementarla,
+  dejaba pasar a cualquier usuario autenticado sin verificar, sin avisar de ningún
+  error. Detectado por Larastan al añadirlo (`Verified` event esperaba
+  `MustVerifyEmail`, recibía `User|null`). No había ningún test que cubriera este caso
+  (los tests de verificación existentes solo comprueban el propio flujo de
+  verificación, no que las rutas protegidas la exijan) — se añade uno nuevo que prueba
+  justo eso, y que falla en rojo si se revierte el fix.
 
 ### Documentado
 
