@@ -140,6 +140,21 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   para una demo pública).
 - Se baja la `temperature` de la llamada al LLM a `0`, el valor más determinista
   disponible, para minimizar la variación de puntuación entre análisis del mismo CV.
+- Limpieza de la cola de PRs de Dependabot (activo desde hace semanas sin que nadie
+  los fusionara): `actions/checkout` y `actions/setup-node` a v7, `laravel/sail`
+  1.65.0, `@types/node` 26.1.2, `concurrently` 10.0.4, `laravel/tinker` 3.0.2 y, el
+  más relevante, `inertiajs/inertia-laravel` 2.0.24 → 3.3.1. Este último se probó a
+  fondo antes de fusionarlo (suite completa + navegación real en el navegador,
+  subida → resultado, con las props del servidor actualizándose correctamente) porque
+  es una actualización de major que toca el render de cada página. Se deja sin
+  fusionar deliberadamente: `react-dom`/`@types/react-dom` a v19 (mientras `react`
+  sigue en v18 — mezclar majors entre ambos rompe en runtime, requiere una migración a
+  React 19 coordinada), `typescript` 5.9 → 7.0.2 (`typescript-eslint` solo soporta
+  TypeScript `<6.1.0` todavía), `laravel-vite-plugin` 2 → 3 (exige `vite@^8`, y el
+  proyecto sigue en `vite@7`), y las imágenes base de Docker `php` 8.3 → 8.5 y `node`
+  20 → 25 (no hay Docker disponible para probar el build localmente, ni ningún paso
+  de CI que construya la imagen — es la que sirve producción en vivo, así que no se
+  fusiona sin poder verificarla).
 
 ### Corregido
 
