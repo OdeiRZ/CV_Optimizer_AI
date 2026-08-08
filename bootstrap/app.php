@@ -23,5 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // TEMPORARY diagnostic for the Lighthouse-CI 404 mystery. Remove
+        // once root-caused.
+        $exceptions->report(function (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Illuminate\Support\Facades\Log::warning('DIAGNOSTIC: model not found', [
+                'message' => $e->getMessage(),
+            ]);
+        });
     })->create();

@@ -83,7 +83,7 @@ jobs:
             - name: Start server for browser checks
               env:
                   PHP_CLI_SERVER_WORKERS: 4
-              run: php artisan serve --port=8000 --no-reload &
+              run: php artisan serve --port=8000 --no-reload > /tmp/serve.log 2>&1 &
 
             - name: Wait for server
               run: npx wait-on http://127.0.0.1:8000
@@ -112,3 +112,14 @@ jobs:
                   npx lhci autorun \
                       --collect.url=http://127.0.0.1:8000/ \
                       --collect.url=http://127.0.0.1:8000/cv-analyses/01ARZ3NDEKTSV4RRFFQ69G5FAV
+
+            # TEMPORARY: prints the PHP dev server's own access log and
+            # Laravel's log, to see what actually happened to the 404'd
+            # request. Remove once root-caused.
+            - name: Print diagnostic logs
+              if: always()
+              run: |
+                  echo "--- php artisan serve access log ---"
+                  cat /tmp/serve.log || true
+                  echo "--- storage/logs/laravel.log ---"
+                  cat storage/logs/laravel.log || true
