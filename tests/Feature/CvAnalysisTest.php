@@ -5,6 +5,7 @@ use App\Enums\CvAnalysisStatus;
 use App\Jobs\AnalyzeCvJob;
 use App\Models\CvAnalysis;
 use App\Services\CvAnalysisSchema;
+use App\Services\CvTextExtractor;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
@@ -106,12 +107,12 @@ it('still redirects to the results page when the sync-dispatched job throws', fu
     // rethrow bubble into a raw, un-Inertia'd 500 response.
     Storage::fake('local');
 
-    $this->app->bind(\App\Services\CvTextExtractor::class, function () {
-        return new class extends \App\Services\CvTextExtractor
+    $this->app->bind(CvTextExtractor::class, function () {
+        return new class extends CvTextExtractor
         {
             public function extract(string $disk, string $path): string
             {
-                throw new \RuntimeException('No text could be extracted from the uploaded CV.');
+                throw new RuntimeException('No text could be extracted from the uploaded CV.');
             }
         };
     });
@@ -200,8 +201,8 @@ it('completes the analysis and stores the structured result when the job runs', 
     ]);
 
     // The PDF parser can't read a fake binary file, so we swap in a stub extractor for this test.
-    $this->app->bind(\App\Services\CvTextExtractor::class, function () {
-        return new class extends \App\Services\CvTextExtractor
+    $this->app->bind(CvTextExtractor::class, function () {
+        return new class extends CvTextExtractor
         {
             public function extract(string $disk, string $path): string
             {
@@ -210,7 +211,7 @@ it('completes the analysis and stores the structured result when the job runs', 
         };
     });
 
-    (new AnalyzeCvJob($analysis, 'test-visitor'))->handle($this->app->make(\App\Services\CvTextExtractor::class));
+    (new AnalyzeCvJob($analysis, 'test-visitor'))->handle($this->app->make(CvTextExtractor::class));
 
     $analysis->refresh();
 
@@ -221,8 +222,8 @@ it('completes the analysis and stores the structured result when the job runs', 
 it('reuses the cached result when the same visitor resubmits the same CV and job description', function () {
     Storage::fake('local');
 
-    $this->app->bind(\App\Services\CvTextExtractor::class, function () {
-        return new class extends \App\Services\CvTextExtractor
+    $this->app->bind(CvTextExtractor::class, function () {
+        return new class extends CvTextExtractor
         {
             public function extract(string $disk, string $path): string
             {
@@ -243,7 +244,7 @@ it('reuses the cached result when the same visitor resubmits the same CV and job
         StructuredResponseFake::make()->withStructured($fakeResult),
     ]);
 
-    $extractor = $this->app->make(\App\Services\CvTextExtractor::class);
+    $extractor = $this->app->make(CvTextExtractor::class);
 
     $first = CvAnalysis::create([
         'original_filename' => 'cv.pdf',
@@ -275,8 +276,8 @@ it('reuses the cached result when the same visitor resubmits the same CV and job
 it('does not reuse the cached result for a different visitor with the same CV text', function () {
     Storage::fake('local');
 
-    $this->app->bind(\App\Services\CvTextExtractor::class, function () {
-        return new class extends \App\Services\CvTextExtractor
+    $this->app->bind(CvTextExtractor::class, function () {
+        return new class extends CvTextExtractor
         {
             public function extract(string $disk, string $path): string
             {
@@ -290,7 +291,7 @@ it('does not reuse the cached result for a different visitor with the same CV te
         StructuredResponseFake::make()->withStructured(['score' => 65, 'summary' => 'B', 'sections' => [], 'missing_keywords' => [], 'bullet_rewrites' => []]),
     ]);
 
-    $extractor = $this->app->make(\App\Services\CvTextExtractor::class);
+    $extractor = $this->app->make(CvTextExtractor::class);
 
     $first = CvAnalysis::create([
         'original_filename' => 'cv.pdf',
@@ -320,8 +321,8 @@ it('does not reuse the cached result for a different visitor with the same CV te
 it('does not reuse the cached result when the job description differs', function () {
     Storage::fake('local');
 
-    $this->app->bind(\App\Services\CvTextExtractor::class, function () {
-        return new class extends \App\Services\CvTextExtractor
+    $this->app->bind(CvTextExtractor::class, function () {
+        return new class extends CvTextExtractor
         {
             public function extract(string $disk, string $path): string
             {
@@ -335,7 +336,7 @@ it('does not reuse the cached result when the job description differs', function
         StructuredResponseFake::make()->withStructured(['score' => 65, 'summary' => 'B', 'sections' => [], 'missing_keywords' => [], 'bullet_rewrites' => []]),
     ]);
 
-    $extractor = $this->app->make(\App\Services\CvTextExtractor::class);
+    $extractor = $this->app->make(CvTextExtractor::class);
 
     $first = CvAnalysis::create([
         'original_filename' => 'cv.pdf',
@@ -372,12 +373,12 @@ it('marks the analysis as failed when text extraction throws', function () {
         'status' => CvAnalysisStatus::Pending,
     ]);
 
-    $this->app->bind(\App\Services\CvTextExtractor::class, function () {
-        return new class extends \App\Services\CvTextExtractor
+    $this->app->bind(CvTextExtractor::class, function () {
+        return new class extends CvTextExtractor
         {
             public function extract(string $disk, string $path): string
             {
-                throw new \RuntimeException('No text could be extracted from the uploaded CV.');
+                throw new RuntimeException('No text could be extracted from the uploaded CV.');
             }
         };
     });
@@ -386,7 +387,7 @@ it('marks the analysis as failed when text extraction throws', function () {
 
     $job = new AnalyzeCvJob($analysis, 'test-visitor');
 
-    expect(fn () => $job->handle($this->app->make(\App\Services\CvTextExtractor::class)))
+    expect(fn () => $job->handle($this->app->make(CvTextExtractor::class)))
         ->toThrow(RuntimeException::class);
 
     $analysis->refresh();

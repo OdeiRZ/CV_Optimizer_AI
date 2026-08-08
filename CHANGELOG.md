@@ -168,6 +168,13 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   escrituras casi simultáneas esperen brevemente al `lock` de SQLite en vez de fallar
   al instante con "database is locked".
 
+- Laravel Pint (`laravel/pint`) estaba instalado como dependencia de desarrollo pero
+  nunca se ejecutaba: había violaciones reales de estilo sin detectar en 4 ficheros
+  (imports desordenados, `new PdfParser()` en vez de `new PdfParser`, uso de FQCN con
+  `\` en vez de `use`, formato de llaves). Corregidas con `vendor/bin/pint`, y ahora
+  `.github/workflows/tests.yml` ejecuta `vendor/bin/pint --test` antes de la suite,
+  así que un estilo inconsistente rompe el CI en vez de acumularse sin control.
+
 ### Documentado
 
 - Se documenta en el README que la puntuación puede variar ligeramente entre distintos

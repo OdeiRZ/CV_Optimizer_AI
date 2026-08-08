@@ -37,7 +37,7 @@ class CvTextExtractor
 
     protected function extractFromPdf(string $absolutePath): string
     {
-        return (new PdfParser())->parseFile($absolutePath)->getText();
+        return (new PdfParser)->parseFile($absolutePath)->getText();
     }
 
     protected function extractFromDocx(string $absolutePath): string
