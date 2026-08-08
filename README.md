@@ -143,6 +143,27 @@ La demo en vivo corre en el plan gratuito de [Render](https://render.com) median
   pieza de portfolio. Se deja documentado aquí como decisión consciente, no como
   hueco pendiente.
 
+- **Lighthouse CI no cubre la página de resultado, por un 404 intermitente no
+  achacable a esta aplicación.** Al añadir esa URL a `lighthouserc.json`, el Chrome
+  de Lighthouse recibía "Status code: 404" en `/cv-analyses/{id}`, pese a que la
+  fila existía (reconfirmada justo antes) y esa misma URL cargaba bien segundos
+  antes en el mismo job vía Puppeteer (el chequeo de accesibilidad). Investigado con
+  instrumentación real, no solo hipótesis: un `Route::fallback` que registraba
+  cualquier petición no reconocida por el router, un listener que registraba
+  cualquier `ModelNotFoundException`, y el propio log de acceso del servidor de
+  desarrollo de PHP. Resultado: el servidor recibió la petición de Lighthouse **tres
+  veces** (su propio reintento automático), respondió en ~0.09 ms cada vez — igual
+  de rápido que cualquier petición exitosa — y ni el `fallback` ni el listener de
+  excepciones se dispararon nunca. La aplicación nunca vio ni generó un 404 para esa
+  URL. Se probó también la hipótesis de que `php artisan serve` con un único worker
+  (ver más abajo) causara la caída de alguna petición por falta de concurrencia:
+  corregido igualmente (es un problema real de producción), pero el 404 en
+  Lighthouse persistió exactamente igual con 4 workers. La causa real está en algo
+  específico de cómo el propio Lighthouse/`chrome-launcher` interpreta la respuesta
+  en este entorno de CI, no en esta aplicación. Se documenta como limitación
+  conocida, respaldada por evidencia, en vez de forzar más ciclos de CI a ciegas; el
+  chequeo se queda limitado a la página de subida, que es la que ve todo visitante.
+
 ## Changelog
 
 Historial de cambios en [CHANGELOG.md](CHANGELOG.md).

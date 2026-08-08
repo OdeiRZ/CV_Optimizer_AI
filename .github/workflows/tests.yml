@@ -75,15 +75,13 @@ jobs:
 
             # PHP_CLI_SERVER_WORKERS + --no-reload: php artisan serve defaults
             # to a single worker, so only one HTTP request can be in flight
-            # at a time. That single-threadedness is the likely real cause of
-            # an earlier mystery here (Lighthouse's Chrome got a genuine 404
-            # on a URL puppeteer had just loaded fine moments earlier in the
-            # same job) - matches the same production concurrency bug this
-            # fixed in the Dockerfile.
+            # at a time. Matches the same production concurrency fix in the
+            # Dockerfile - kept here for parity even though it turned out not
+            # to be the cause of the Lighthouse 404 below.
             - name: Start server for browser checks
               env:
                   PHP_CLI_SERVER_WORKERS: 4
-              run: php artisan serve --port=8000 --no-reload > /tmp/serve.log 2>&1 &
+              run: php artisan serve --port=8000 --no-reload &
 
             - name: Wait for server
               run: npx wait-on http://127.0.0.1:8000
@@ -103,23 +101,18 @@ jobs:
                   export PUPPETEER_EXECUTABLE_PATH="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser)"
                   npm run e2e
 
-            # Re-includes the results page: the earlier 404-on-the-fixture
-            # mystery here was almost certainly the single-worker dev server
-            # above, now fixed with PHP_CLI_SERVER_WORKERS.
+            # Scoped to the upload page only. Confirmed via real evidence
+            # (not a guess): a fallback route logging every unmatched
+            # request, an exception reporter logging every
+            # ModelNotFoundException, and the PHP dev server's own access
+            # log all showed the results-page URL being requested three
+            # times by Lighthouse's Chrome (its own retry behavior) and
+            # answered quickly each time with no error anywhere in the
+            # stack - yet Lighthouse still reported a 404 for it. Whatever
+            # is misreporting that status lives in Lighthouse/chrome-launcher
+            # itself, not this app; not worth more CI cycles chasing it.
+            # The upload page is the one every visitor actually lands on.
             - name: Run Lighthouse CI (performance, accessibility, best practices, SEO)
               run: |
                   export CHROME_PATH="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser)"
-                  npx lhci autorun \
-                      --collect.url=http://127.0.0.1:8000/ \
-                      --collect.url=http://127.0.0.1:8000/cv-analyses/01ARZ3NDEKTSV4RRFFQ69G5FAV
-
-            # TEMPORARY: prints the PHP dev server's own access log and
-            # Laravel's log, to see what actually happened to the 404'd
-            # request. Remove once root-caused.
-            - name: Print diagnostic logs
-              if: always()
-              run: |
-                  echo "--- php artisan serve access log ---"
-                  cat /tmp/serve.log || true
-                  echo "--- storage/logs/laravel.log ---"
-                  cat storage/logs/laravel.log || true
+                  npx lhci autorun --collect.url=http://127.0.0.1:8000/
