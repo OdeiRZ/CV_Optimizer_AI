@@ -214,6 +214,12 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   (los tests de verificación existentes solo comprueban el propio flujo de
   verificación, no que las rutas protegidas la exijan) — se añade uno nuevo que prueba
   justo eso, y que falla en rojo si se revierte el fix.
+- El icono del interruptor de tema mostraba el modo actual (luna en modo oscuro, sol
+  en modo claro) en vez del modo al que cambiarías al pulsarlo, al revés de lo que ya
+  decía su propio `aria-label` ("Switch to light mode" se mostraba junto a una luna,
+  no un sol). Este componente es el origen del mismo error arrastrado a `LudoDex`
+  (que copió este patrón de interruptor). Ahora el icono coincide con la acción: sol
+  en modo oscuro, luna en modo claro.
 
 ### Documentado
 
