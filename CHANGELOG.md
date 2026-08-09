@@ -220,6 +220,12 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   no un sol). Este componente es el origen del mismo error arrastrado a `LudoDex`
   (que copió este patrón de interruptor). Ahora el icono coincide con la acción: sol
   en modo oscuro, luna en modo claro.
+- `favicon.ico` era el placeholder vacío (0 bytes) que trae el scaffold de Laravel, y
+  no había ninguna otra etiqueta `<link rel="icon">` en `app.blade.php` — el
+  navegador pedía `/favicon.ico` por convención y no encontraba nada real. Se genera
+  un favicon propio (documento con esquina doblada y una insignia con check en
+  verde esmeralda, en línea con los colores ya usados en el resto de la app) más
+  `apple-touch-icon.png`, y se enlazan explícitamente desde `app.blade.php`.
 
 ### Documentado
 
