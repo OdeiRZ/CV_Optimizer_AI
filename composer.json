@@ -4,7 +4,7 @@
     "type": "project",
     "description": "Analizador y optimizador de CVs con IA, construido con Laravel, Inertia/React y Prism.",
     "keywords": ["laravel", "inertia", "react", "ai", "cv"],
-    "license": "MIT",
+    "license": "AGPL-3.0-or-later",
     "require": {
         "php": "^8.2",
         "barryvdh/laravel-dompdf": "^3.1",

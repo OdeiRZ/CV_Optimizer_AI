@@ -133,6 +133,11 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 
 ### Cambiado
 
+- Licencia del proyecto: de MIT a AGPLv3 — para que un tercero que
+  ofrezca este código (o una versión modificada) como servicio de red
+  también esté obligado a compartir su código fuente, algo que MIT no
+  exige.
+
 - La base de datos de producción pasa de PostgreSQL a SQLite. El plan gratuito de
   Postgres en Render caduca a los 30 días y se borra si no se pasa a un plan de pago;
   SQLite vive en el propio contenedor sin fecha de expiración (a cambio de que el

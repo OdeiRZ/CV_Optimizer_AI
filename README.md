@@ -182,7 +182,7 @@ Historial de cambios en [CHANGELOG.md](CHANGELOG.md).
 
 ## Licencia
 
-MIT (ver archivo [LICENSE](LICENSE)).
+AGPLv3 (ver archivo [LICENSE](LICENSE)).
 
 ## Autor
 
