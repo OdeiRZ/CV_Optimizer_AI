@@ -9,6 +9,15 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 
 ### Añadido
 
+- Comando `php artisan cv-analyses:prune --days=30` (a diario vía `routes/console.php`)
+  que borra análisis de CV (fila + archivo subido) más antiguos que el umbral. Nace de
+  una auditoría que asumió, equivocadamente, que la fila persistía indefinidamente en
+  una base de datos gestionada tipo Postgres — en realidad ya vive en el mismo SQLite
+  efímero que el archivo (ver Despliegue), así que hoy actúa como red de seguridad
+  explícita más que como el mecanismo activo: sin un worker/cron propio en el
+  contenedor de producción, nada dispara `schedule:run` todavía. Verificado con
+  `tests/Feature/Console/PruneCvAnalysesTest.php` (borra lo viejo, respeta `--days`,
+  no falla si el archivo ya no existe).
 - Informe descargable en PDF del resultado de un análisis completado (puntuación,
   feedback por sección, palabras clave ausentes y puntos reescritos), vía
   `barryvdh/laravel-dompdf`.
