@@ -200,6 +200,15 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   valor bien formado pero falso — cerrarlo del todo requeriría un paso en el propio
   Cloudflare (p. ej. una Transform Rule con una cabecera secreta compartida que el
   código exija), dejado fuera de esta corrección a propósito por ahora.
+- Hallazgo de una auditoría de seguridad: el prompt enviado a Anthropic concatenaba
+  las instrucciones de la tarea con el texto del CV/oferta subido por el usuario en un
+  único mensaje, separados solo por un delimitador fijo (`---`) que el propio CV podía
+  reproducir para intentar "cerrar" esa sección e inyectar instrucciones nuevas
+  (inyección de prompt). `AnalyzeCvJob::buildSystemPrompt()`/`buildUserPrompt()` separan
+  ahora las instrucciones (system) del contenido subido (user, etiquetado con
+  `<cv>`/`<job_posting>`), con el system prompt indicando explícitamente que ese
+  contenido es dato no confiable, nunca instrucciones. Mitiga el vector más obvio, no
+  lo elimina del todo — ver [Seguridad](README.md#seguridad) para el matiz.
 - Un CV que superaba el límite de tamaño (probado con un DOCX de 9,7 MB) provocaba un
   413 en crudo de PHP en lugar del mensaje de validación habitual del formulario: el
   límite de Laravel nunca llegaba a comprobarse porque `post_max_size`/
