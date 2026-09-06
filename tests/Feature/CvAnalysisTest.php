@@ -167,6 +167,32 @@ it('rate-limits by the Cloudflare connecting IP even when the resolved request I
     Bus::assertDispatchedTimes(AnalyzeCvJob::class, 10);
 });
 
+it('falls back to the resolved request IP when CF-Connecting-IP is not a real IP', function () {
+    // A request that bypasses Cloudflare and hits the app directly
+    // controls this header completely - filter_var() at least rejects an
+    // obviously malformed value instead of trusting it blindly. This does
+    // NOT verify the request came through Cloudflare at all (a spoofed but
+    // well-formed IP still gets through - see CvAnalysisRateLimiter's own
+    // docblock), just that a garbage value doesn't get used as a rate
+    // limit identity.
+    Storage::fake('local');
+    Bus::fake();
+
+    foreach (range(1, 10) as $i) {
+        $this->withServerVariables(['REMOTE_ADDR' => '84.127.128.30'])
+            ->withHeaders(['CF-Connecting-IP' => "not-an-ip-{$i}"])
+            ->post(route('cv-analyses.store'), ['cv' => fakeCvUpload()])
+            ->assertRedirect();
+    }
+
+    $response = $this->withServerVariables(['REMOTE_ADDR' => '84.127.128.30'])
+        ->withHeaders(['CF-Connecting-IP' => 'not-an-ip-11'])
+        ->post(route('cv-analyses.store'), ['cv' => fakeCvUpload()]);
+
+    $response->assertSessionHasErrors('cv');
+    Bus::assertDispatchedTimes(AnalyzeCvJob::class, 10);
+});
+
 it('completes the analysis and stores the structured result when the job runs', function () {
     Storage::fake('local');
 

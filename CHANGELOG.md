@@ -190,6 +190,16 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   del balanceador de Render — que además no es estable entre peticiones, por lo que el
   contador por IP nunca superaba 1 para el mismo visitante. Ahora se usa la cabecera
   `CF-Connecting-IP` de Cloudflare, que sí lleva la IP real del visitante.
+- Hallazgo de una auditoría de seguridad sobre el arreglo anterior: `CF-Connecting-IP`
+  se confiaba sin comprobar que fuera siquiera una IP válida, así que una petición que
+  mandara un valor cualquiera en esa cabecera obtenía una identidad nueva en cada
+  intento, saltándose el límite diario por completo. Ahora se descarta con
+  `filter_var(..., FILTER_VALIDATE_IP)` y se cae a `$request->ip()` si no es una IP real.
+  **Esto no cierra el hueco entero**: quien golpee la URL propia de Render
+  (`*.onrender.com`) sin pasar por Cloudflare controla igualmente esa cabecera con un
+  valor bien formado pero falso — cerrarlo del todo requeriría un paso en el propio
+  Cloudflare (p. ej. una Transform Rule con una cabecera secreta compartida que el
+  código exija), dejado fuera de esta corrección a propósito por ahora.
 - Un CV que superaba el límite de tamaño (probado con un DOCX de 9,7 MB) provocaba un
   413 en crudo de PHP en lugar del mensaje de validación habitual del formulario: el
   límite de Laravel nunca llegaba a comprobarse porque `post_max_size`/

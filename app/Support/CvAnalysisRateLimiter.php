@@ -45,10 +45,29 @@ class CvAnalysisRateLimiter
      * request-to-request, which was silently defeating the rate limiter
      * (confirmed live: 11 consecutive requests, zero blocked). Cloudflare
      * sets CF-Connecting-IP to the real visitor IP regardless of proxy
-     * trust config, so prefer that when present.
+     * trust config, so prefer that when present - but only once it's been
+     * through filter_var() below (see that comment for why this alone
+     * doesn't close the gap for a request that bypasses Cloudflare
+     * entirely and hits Render's own *.onrender.com URL directly).
      */
     public static function clientIp(Request $request): ?string
     {
-        return $request->header('CF-Connecting-IP') ?: $request->ip();
+        $cfConnectingIp = $request->header('CF-Connecting-IP');
+
+        // A genuine Cloudflare-proxied request always carries a real IP
+        // here (Cloudflare stamps this header itself, overwriting whatever
+        // the client sent) - filter_var() rejects a spoofed non-IP value
+        // outright. This does NOT verify the request actually came through
+        // Cloudflare: someone hitting Render's own public URL directly
+        // controls this header completely and can still send a
+        // well-formed but fake IP, still evading the daily limit. Closing
+        // that requires a Cloudflare-side check (e.g. a Transform Rule
+        // adding a shared-secret header the app can verify) - deliberately
+        // not done here, see CHANGELOG.
+        if ($cfConnectingIp && filter_var($cfConnectingIp, FILTER_VALIDATE_IP)) {
+            return $cfConnectingIp;
+        }
+
+        return $request->ip();
     }
 }
