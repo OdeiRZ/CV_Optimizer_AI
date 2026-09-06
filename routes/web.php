@@ -18,9 +18,11 @@ Route::get('/cv-analyses/{cvAnalysis}/status', [CvAnalysisController::class, 'st
     ->name('cv-analyses.status');
 
 Route::get('/cv-analyses/{cvAnalysis}/report', [CvAnalysisController::class, 'downloadReport'])
+    ->middleware('throttle:cv-analysis-asset')
     ->name('cv-analyses.report');
 
 Route::get('/cv-analyses/{cvAnalysis}/file', [CvAnalysisController::class, 'previewFile'])
+    ->middleware('throttle:cv-analysis-asset')
     ->name('cv-analyses.file');
 
 Route::get('/dashboard', function () {

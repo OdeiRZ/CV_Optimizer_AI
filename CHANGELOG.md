@@ -209,6 +209,12 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   `<cv>`/`<job_posting>`), con el system prompt indicando explícitamente que ese
   contenido es dato no confiable, nunca instrucciones. Mitiga el vector más obvio, no
   lo elimina del todo — ver [Seguridad](README.md#seguridad) para el matiz.
+- Hallazgo de una auditoría de seguridad: `/cv-analyses/{id}/report` (genera el PDF vía
+  DomPDF, coste real de CPU) y `/cv-analyses/{id}/file` (sirve el archivo original) no
+  tenían ningún límite de peticiones, a diferencia del propio análisis — cualquiera con
+  el ULID podía pedirlos en bucle sin tope. Nuevo limitador `cv-analysis-asset` (30 por
+  minuto, misma identidad de visitante consciente de Cloudflare que ya usa el límite
+  diario) aplicado a ambas rutas.
 - Un CV que superaba el límite de tamaño (probado con un DOCX de 9,7 MB) provocaba un
   413 en crudo de PHP en lugar del mensaje de validación habitual del formulario: el
   límite de Laravel nunca llegaba a comprobarse porque `post_max_size`/

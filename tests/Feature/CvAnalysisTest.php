@@ -524,6 +524,27 @@ it('returns 404 for a report of an analysis that is not completed', function () 
     $this->get(route('cv-analyses.report', $analysis))->assertNotFound();
 });
 
+it('rate-limits repeated hits to the report/file routes, a security audit finding', function () {
+    // Neither route calls the paid LLM, but generating the PDF (real CPU
+    // via DomPDF) or streaming the original file (bandwidth) had no limit
+    // at all - anyone with the ULID could hit either as many times as they
+    // liked.
+    $analysis = CvAnalysis::create([
+        'original_filename' => 'cv.pdf',
+        'file_path' => UploadedFile::fake()->create('cv.pdf', 10, 'application/pdf')->store('cv-uploads', 'local'),
+        'status' => CvAnalysisStatus::Completed,
+        'result' => [
+            'score' => 80, 'summary' => 'A', 'sections' => [], 'missing_keywords' => [], 'bullet_rewrites' => [],
+        ],
+    ]);
+
+    foreach (range(1, 30) as $i) {
+        $this->get(route('cv-analyses.report', $analysis))->assertOk();
+    }
+
+    $this->get(route('cv-analyses.report', $analysis))->assertTooManyRequests();
+});
+
 it('serves the original pdf inline for preview', function () {
     Storage::fake('local');
     Storage::disk('local')->put('cv-uploads/fake.pdf', '%PDF-1.4 fake content');

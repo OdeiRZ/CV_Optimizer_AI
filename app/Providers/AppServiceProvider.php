@@ -43,5 +43,18 @@ class AppServiceProvider extends ServiceProvider
                     ])->withHeaders($headers);
                 });
         });
+
+        // The report/file routes don't call the paid LLM, so they don't need
+        // the daily cap above - but they had no limit at all (a security
+        // audit finding): anyone with an analysis's ULID could hit
+        // downloadReport() (DomPDF, real CPU cost) or previewFile()
+        // (bandwidth) as many times as they liked. Generous per-minute cap,
+        // same Cloudflare-aware visitor identity as the daily one - a real
+        // page view only ever needs a couple of hits (the preview iframe
+        // loads once, a download click is one more), this only stops a
+        // tight loop hammering either endpoint.
+        RateLimiter::for('cv-analysis-asset', function (Request $request) {
+            return Limit::perMinute(30)->by(CvAnalysisRateLimiter::key($request));
+        });
     }
 }
