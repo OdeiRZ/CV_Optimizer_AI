@@ -16,7 +16,7 @@ COPY . .
 RUN composer dump-autoload --optimize --no-dev
 
 # ---- Frontend build -----------------------------------------------------
-FROM node:20-alpine AS frontend
+FROM node:26-alpine AS frontend
 
 WORKDIR /app
 
