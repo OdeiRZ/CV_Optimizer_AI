@@ -5,7 +5,7 @@
 
 Analizador y optimizador de CVs con IA: sube tu currículum (y opcionalmente la oferta de trabajo a la que aspiras) y recibe una puntuación tipo ATS, feedback accionable por secciones y reescrituras concretas de tus puntos más débiles.
 
-**Demo en vivo:** [cv-optimizer-ai-gedo.onrender.com](https://cv-optimizer-ai-gedo.onrender.com)
+**Demo en vivo:** [cv-optimizer-ai-dyg5.onrender.com](https://cv-optimizer-ai-dyg5.onrender.com)
 
 > El servicio está en el plan gratuito de Render: si lleva un rato inactivo, la primera petición puede tardar ~50s en despertar el contenedor.
 
