@@ -30,7 +30,7 @@ RUN npm run build
 # Single-process container (Laravel's built-in server) so the app can be
 # deployed as-is on platforms like Railway/Fly.io, which expect one
 # container listening on $PORT rather than a separate nginx + php-fpm pair.
-FROM php:8.3-cli-alpine AS app
+FROM php:8.5-cli-alpine AS app
 
 WORKDIR /var/www/html
 
