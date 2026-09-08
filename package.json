@@ -11,7 +11,7 @@
         "lighthouse": "lhci autorun"
     },
     "devDependencies": {
-        "@eslint/js": "^9.39.5",
+        "@eslint/js": "^10.0.1",
         "@headlessui/react": "^2.0.0",
         "@inertiajs/react": "^2.0.0",
         "@lhci/cli": "^0.15.1",
