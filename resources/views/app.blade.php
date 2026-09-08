@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- cf-deploy-check-9c14f2 --><!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
