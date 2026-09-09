@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Queue\Jobs\SyncJob;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Facades\Prism;
@@ -91,10 +92,34 @@ class AnalyzeCvJob implements ShouldQueue
                 'exception' => $e->getMessage(),
             ]);
 
-            $this->analysis->update([
-                'status' => CvAnalysisStatus::Failed,
-                'error_message' => 'No se ha podido analizar el CV. Inténtalo de nuevo en unos minutos.',
-            ]);
+            // Only mark Failed on the attempt that won't be retried
+            // (hallazgo de una auditoría de código). $tries only takes
+            // effect with a real queue worker (local dev, see that
+            // property's own docblock) - there, an intermediate failed
+            // attempt firing handle() again immediately overwrites
+            // status back to Processing at the top of this method. If
+            // that intermediate failure had already been written as
+            // Failed, the frontend's polling (only polls while pending/
+            // processing) had already stopped watching by the time the
+            // real retry quietly succeeded or failed for good - nobody
+            // was still looking when the row moved on.
+            //
+            // SyncJob (QUEUE_CONNECTION=sync, production) always reports
+            // attempts() === 1 regardless of $tries - it never actually
+            // retries, so it's excluded here too, alongside handle()
+            // being invoked directly with no job at all (e.g. a test
+            // calling handle() itself) - neither has a retry coming, so
+            // both are always a final attempt.
+            $willRetry = $this->job !== null
+                && ! $this->job instanceof SyncJob
+                && $this->attempts() < $this->tries;
+
+            if (! $willRetry) {
+                $this->analysis->update([
+                    'status' => CvAnalysisStatus::Failed,
+                    'error_message' => 'No se ha podido analizar el CV. Inténtalo de nuevo en unos minutos.',
+                ]);
+            }
 
             throw $e;
         }

@@ -7,6 +7,7 @@ use App\Models\CvAnalysis;
 use App\Services\CvAnalysisSchema;
 use App\Services\CvTextExtractor;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Queue\Jobs\FakeJob;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
 use Prism\Prism\Facades\Prism;
@@ -463,6 +464,65 @@ it('marks the analysis as failed when text extraction throws', function () {
     Prism::fake();
 
     $job = new AnalyzeCvJob($analysis, 'test-visitor');
+
+    expect(fn () => $job->handle($this->app->make(CvTextExtractor::class)))
+        ->toThrow(RuntimeException::class);
+
+    $analysis->refresh();
+
+    expect($analysis->status)->toBe(CvAnalysisStatus::Failed)
+        ->and($analysis->error_message)->not->toBeNull();
+});
+
+it('leaves the status as Processing (not Failed) on an intermediate attempt a real queue worker will retry', function () {
+    // hallazgo de una auditoría de código: with a real queue worker
+    // (local dev, $tries = 2), the 2nd attempt fires handle() again,
+    // which immediately overwrites status back to Processing at the top
+    // of that method - so an intermediate failure written as Failed
+    // would have already stopped the frontend's polling (only polls
+    // while pending/processing) before that real retry quietly
+    // succeeded or failed for good. Only the truly final attempt should
+    // ever surface as Failed.
+    Storage::fake('local');
+
+    $path = UploadedFile::fake()->create('cv.pdf', 10)->store('cv-uploads', 'local');
+
+    $analysis = CvAnalysis::create([
+        'original_filename' => 'cv.pdf',
+        'file_path' => $path,
+        'status' => CvAnalysisStatus::Pending,
+    ]);
+
+    $this->app->bind(CvTextExtractor::class, function () {
+        return new class extends CvTextExtractor
+        {
+            public function extract(string $disk, string $path): string
+            {
+                throw new RuntimeException('No text could be extracted from the uploaded CV.');
+            }
+        };
+    });
+
+    Prism::fake();
+
+    $job = new AnalyzeCvJob($analysis, 'test-visitor');
+
+    $firstAttempt = new FakeJob;
+    $firstAttempt->attempts = 1; // 1st of $tries = 2 attempts
+    $job->job = $firstAttempt;
+
+    expect(fn () => $job->handle($this->app->make(CvTextExtractor::class)))
+        ->toThrow(RuntimeException::class);
+
+    $analysis->refresh();
+
+    expect($analysis->status)->toBe(CvAnalysisStatus::Processing)
+        ->and($analysis->error_message)->toBeNull();
+
+    // The real worker's 2nd (and last) attempt: this time it must surface.
+    $secondAttempt = new FakeJob;
+    $secondAttempt->attempts = 2;
+    $job->job = $secondAttempt;
 
     expect(fn () => $job->handle($this->app->make(CvTextExtractor::class)))
         ->toThrow(RuntimeException::class);
