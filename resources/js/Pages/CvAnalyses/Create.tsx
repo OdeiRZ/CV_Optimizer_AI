@@ -28,11 +28,34 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
 
     const [isDragging, setIsDragging] = useState(false);
     const [loadingSample, setLoadingSample] = useState(false);
+    const [submitError, setSubmitError] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route('cv-analyses.store'), { forceFormData: true });
+        setSubmitError(false);
+
+        post(route('cv-analyses.store'), {
+            forceFormData: true,
+            // Neither callback was here before (hallazgo de una
+            // auditoría de código): Inertia still reset `processing` to
+            // false either way, so on a connection failure (dropped
+            // network, timeout during Render's ~50s cold start) the wait
+            // screen just vanished back to the empty form with no
+            // explanation and no cv/job_description field to blame - the
+            // CV itself was never rejected, the request just never made
+            // it there. errors.cv/errors.job_description already cover
+            // an actual validation failure, so onError only needs to
+            // step in when neither of those got set.
+            onError: (errors) => {
+                if (!errors.cv && !errors.job_description) {
+                    setSubmitError(true);
+                }
+            },
+            onNetworkError: () => {
+                setSubmitError(true);
+            },
+        });
     };
 
     // Production runs the analysis synchronously inside this same request
@@ -145,6 +168,15 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
                             {t.remainingToday(remainingToday, dailyLimit)}
                         </p>
                     </header>
+
+                    {submitError && (
+                        <p
+                            role="alert"
+                            className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-center text-sm font-medium text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
+                        >
+                            {t.submitError}
+                        </p>
+                    )}
 
                     {processing ? (
                         <div
