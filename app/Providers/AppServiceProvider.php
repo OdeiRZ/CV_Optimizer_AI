@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Support\CvAnalysisRateLimiter;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -25,6 +26,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        $this->warnIfDebugModeInProduction();
 
         // Public demo hitting a paid LLM API: cap analyses per user/IP per day.
         // A custom response is required here: without it, the 429 comes back
@@ -56,5 +59,29 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('cv-analysis-asset', function (Request $request) {
             return Limit::perMinute(30)->by(CvAnalysisRateLimiter::key($request));
         });
+    }
+
+    /**
+     * APP_DEBUG=true in production leaks a stack trace on any uncaught
+     * exception - the current request's own HTML (any CV text/job
+     * posting content in it) plus every env var, ANTHROPIC_API_KEY
+     * included (hallazgo de una auditoría de código; see .env.example's
+     * own note next to APP_DEBUG). Neither .env.example nor docker-
+     * compose.yml is what actually configures production - Render's own
+     * env vars are (see Despliegue in the README) - so this can't fix a
+     * real misconfiguration there, only make it loudly visible in the
+     * logs instead of silently shipping. Deliberately just a log, not an
+     * abort: refusing to boot could take the live site down outright over
+     * a config problem this process can't itself correct. Reads
+     * config('app.env') rather than $this->app->environment() so it can
+     * be exercised directly in a test by overriding config alone,
+     * without needing to reboot the whole app with a different
+     * container-level 'env' binding.
+     */
+    public function warnIfDebugModeInProduction(): void
+    {
+        if (config('app.env') === 'production' && config('app.debug')) {
+            Log::critical('APP_DEBUG is enabled in production - stack traces are being exposed to visitors.');
+        }
     }
 }

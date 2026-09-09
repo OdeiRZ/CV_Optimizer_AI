@@ -4,6 +4,9 @@ services:
         ports:
             - '8080:8080'
         environment:
+            # Local-only compose file, not what Render runs in production
+            # (see Despliegue in the README) - APP_ENV/APP_DEBUG here are
+            # never meant to reach a real deployment.
             APP_ENV: local
             APP_DEBUG: 'true'
             APP_URL: http://localhost:8080
