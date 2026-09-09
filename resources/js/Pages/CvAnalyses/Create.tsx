@@ -1,5 +1,5 @@
 import { FormEventHandler, useEffect, useRef, useState } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import ThemeToggle from '@/Components/ThemeToggle';
 import { useLanguage } from '@/lib/i18n';
 import { CvAnalysisLanguage } from '@/types/cv';
@@ -31,29 +31,41 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
     const [submitError, setSubmitError] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // This Inertia version (2.x, see package.json) has no per-visit
+    // onNetworkError option - only a later major adds one. The
+    // equivalent here is the global 'exception' event: fired for an
+    // actual thrown/network-level failure, as opposed to 'error'
+    // (already handled per-submission below via onError, for a normal
+    // Inertia response carrying validation errors). Scoped to this
+    // page's own mount lifecycle since it's a global listener, not tied
+    // to a specific request.
+    useEffect(() => {
+        return router.on('exception', () => {
+            setSubmitError(true);
+        });
+    }, []);
+
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         setSubmitError(false);
 
         post(route('cv-analyses.store'), {
             forceFormData: true,
-            // Neither callback was here before (hallazgo de una
-            // auditoría de código): Inertia still reset `processing` to
-            // false either way, so on a connection failure (dropped
-            // network, timeout during Render's ~50s cold start) the wait
-            // screen just vanished back to the empty form with no
-            // explanation and no cv/job_description field to blame - the
-            // CV itself was never rejected, the request just never made
-            // it there. errors.cv/errors.job_description already cover
-            // an actual validation failure, so onError only needs to
-            // step in when neither of those got set.
+            // Wasn't here before (hallazgo de una auditoría de código):
+            // Inertia still reset `processing` to false either way, so
+            // on a connection failure (dropped network, timeout during
+            // Render's ~50s cold start) the wait screen just vanished
+            // back to the empty form with no explanation and no
+            // cv/job_description field to blame - the CV itself was
+            // never rejected, the request just never made it there
+            // (that specific case is the 'exception' listener above).
+            // errors.cv/errors.job_description already cover an actual
+            // validation failure, so onError only needs to step in when
+            // neither of those got set.
             onError: (errors) => {
                 if (!errors.cv && !errors.job_description) {
                     setSubmitError(true);
                 }
-            },
-            onNetworkError: () => {
-                setSubmitError(true);
             },
         });
     };
