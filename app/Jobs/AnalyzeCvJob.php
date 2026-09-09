@@ -14,6 +14,7 @@ use Illuminate\Queue\Jobs\SyncJob;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Facades\Prism;
+use RuntimeException;
 use Throwable;
 
 class AnalyzeCvJob implements ShouldQueue
@@ -117,12 +118,33 @@ class AnalyzeCvJob implements ShouldQueue
             if (! $willRetry) {
                 $this->analysis->update([
                     'status' => CvAnalysisStatus::Failed,
-                    'error_message' => 'No se ha podido analizar el CV. Inténtalo de nuevo en unos minutos.',
+                    'error_message' => static::errorMessageFor($e),
                 ]);
             }
 
             throw $e;
         }
+    }
+
+    /**
+     * A RuntimeException here always comes from CvTextExtractor (hallazgo
+     * de una auditoría de código) - Prism's own exceptions
+     * (PrismException and its subclasses) extend the plain Exception
+     * class, never RuntimeException, so this check never misidentifies an
+     * LLM/HTTP failure as an extraction one. The distinction matters: a
+     * CV with no extractable text (a scanned PDF with no text layer, a
+     * corrupted upload) fails identically on every retry - "inténtalo de
+     * nuevo en unos minutos" is actively misleading advice for it, unlike
+     * for the transient failures (timeouts, 5xx, rate limits) that
+     * message actually fits.
+     */
+    public static function errorMessageFor(Throwable $e): string
+    {
+        if ($e instanceof RuntimeException) {
+            return 'No se ha podido leer texto de este CV. Puede que sea una imagen escaneada sin texto, o el archivo esté dañado - prueba con otro archivo.';
+        }
+
+        return 'No se ha podido analizar el CV. Inténtalo de nuevo en unos minutos.';
     }
 
     /**

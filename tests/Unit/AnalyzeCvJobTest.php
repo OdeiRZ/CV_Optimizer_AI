@@ -32,3 +32,20 @@ it('does not retry a 4xx request error other than 429', function () {
 it('does not retry an unrelated exception', function () {
     expect(AnalyzeCvJob::shouldRetryHttpFailure(new RuntimeException('something else')))->toBeFalse();
 });
+
+it('gives a specific, non-retry message for a RuntimeException (always from CvTextExtractor)', function () {
+    // hallazgo de una auditoría de código: a CV with no extractable text
+    // (a scanned PDF, a corrupted file) fails identically on every
+    // retry - "inténtalo de nuevo" is misleading advice for it.
+    $message = AnalyzeCvJob::errorMessageFor(new RuntimeException('No text could be extracted from the uploaded CV.'));
+
+    expect($message)->toContain('texto')
+        ->and($message)->not->toContain('Inténtalo de nuevo');
+});
+
+it('gives the generic retry message for anything that is not a RuntimeException', function () {
+    expect(AnalyzeCvJob::errorMessageFor(new ConnectionException('timed out')))
+        ->toContain('Inténtalo de nuevo')
+        ->and(AnalyzeCvJob::errorMessageFor(fakeRequestException(529)))
+        ->toContain('Inténtalo de nuevo');
+});

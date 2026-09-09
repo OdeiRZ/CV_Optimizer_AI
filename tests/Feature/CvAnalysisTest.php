@@ -124,7 +124,7 @@ it('still redirects to the results page when the sync-dispatched job throws', fu
 
     $response->assertRedirect(route('cv-analyses.show', $analysis));
     expect($analysis->status)->toBe(CvAnalysisStatus::Failed)
-        ->and($analysis->error_message)->not->toBeNull();
+        ->and($analysis->error_message)->toContain('texto');
 });
 
 it('shows a friendly session error instead of a raw 429 once the daily limit is hit', function () {
@@ -471,7 +471,12 @@ it('marks the analysis as failed when text extraction throws', function () {
     $analysis->refresh();
 
     expect($analysis->status)->toBe(CvAnalysisStatus::Failed)
-        ->and($analysis->error_message)->not->toBeNull();
+        // hallazgo de una auditoría de código: a text-extraction failure
+        // gets its own message ("no se ha podido leer texto..."), not
+        // the generic "inténtalo de nuevo" one - retrying a CV with no
+        // extractable text fails identically every time.
+        ->and($analysis->error_message)->toContain('texto')
+        ->and($analysis->error_message)->not->toContain('Inténtalo de nuevo');
 });
 
 it('leaves the status as Processing (not Failed) on an intermediate attempt a real queue worker will retry', function () {
