@@ -538,6 +538,21 @@ it('leaves the status as Processing (not Failed) on an intermediate attempt a re
         ->and($analysis->error_message)->not->toBeNull();
 });
 
+it('keeps the database queue retry_after safely above AnalyzeCvJob::$timeout', function () {
+    // hallazgo de una auditoría de código: the classic Laravel footgun -
+    // if retry_after were below (or equal to) the job's own timeout, a
+    // job still genuinely running would get released back onto the queue
+    // and picked up by a second worker while the first is still
+    // processing it, double-billing the same analysis to the LLM. Not
+    // reachable today with the single sequential `queue:listen` composer
+    // run dev uses, but this guards the invariant if either value ever
+    // changes on its own.
+    $job = new AnalyzeCvJob(new CvAnalysis, 'test-visitor');
+
+    expect(config('queue.connections.database.retry_after'))
+        ->toBeGreaterThan($job->timeout);
+});
+
 it('returns the analysis status as json', function () {
     $analysis = CvAnalysis::create([
         'original_filename' => 'cv.pdf',

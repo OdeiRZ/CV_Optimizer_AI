@@ -40,7 +40,15 @@ return [
             'connection' => env('DB_QUEUE_CONNECTION'),
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
-            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 90),
+            // Above AnalyzeCvJob::$timeout (120s), not below it - the
+            // Laravel default (90) is a mine (hallazgo de una auditoría de
+            // código): a job still genuinely running past 90s would get
+            // released back onto the queue and picked up by a second
+            // worker while the first one is still processing it, double-
+            // billing the same CV analysis to the LLM. Harmless today with
+            // the single sequential `queue:listen` composer run dev uses,
+            // but would bite the moment more than one worker runs at once.
+            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 130),
             'after_commit' => false,
         ],
 
