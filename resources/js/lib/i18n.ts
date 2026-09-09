@@ -32,6 +32,7 @@ interface Dictionary {
     analyzingWarning: string;
     genericError: string;
     retry: string;
+    statusCheckError: string;
     scoreLabel: string;
     downloadPdf: string;
     copyLink: string;
@@ -94,6 +95,8 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         analyzingWarning: 'No cierres ni recargues esta pestaña, o perderás el análisis.',
         genericError: 'No se ha podido analizar el CV.',
         retry: 'Volver a intentarlo',
+        statusCheckError:
+            'No se ha podido comprobar el estado del análisis. Puede que sigas sin conexión.',
         scoreLabel: 'Puntuación sobre 100',
         downloadPdf: 'Descargar informe (PDF)',
         copyLink: 'Copiar enlace',
@@ -155,6 +158,8 @@ const translations: Record<CvAnalysisLanguage, Dictionary> = {
         analyzingWarning: "Don't close or reload this tab, or you'll lose the analysis.",
         genericError: 'The CV could not be analyzed.',
         retry: 'Try again',
+        statusCheckError:
+            "Couldn't check the analysis status. You may still be offline.",
         scoreLabel: 'Score out of 100',
         downloadPdf: 'Download report (PDF)',
         copyLink: 'Copy link',

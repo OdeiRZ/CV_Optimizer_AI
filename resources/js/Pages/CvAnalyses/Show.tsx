@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import axios from 'axios';
 import ScoreGauge from '@/Components/ScoreGauge';
@@ -17,6 +17,8 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
     const [analysis, setAnalysis] = useState(initial);
     const { t } = useLanguage(initial.language);
     const [linkCopied, setLinkCopied] = useState(false);
+    const [pollError, setPollError] = useState(false);
+    const consecutiveFailures = useRef(0);
 
     const copyLink = async () => {
         try {
@@ -30,19 +32,44 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
     };
 
     useEffect(() => {
+        if (pollError) {
+            return;
+        }
+
         if (analysis.status !== 'pending' && analysis.status !== 'processing') {
             return;
         }
 
         const interval = setInterval(async () => {
-            const { data } = await axios.get<CvAnalysis>(
-                route('cv-analyses.status', analysis.id),
-            );
-            setAnalysis(data);
+            try {
+                const { data } = await axios.get<CvAnalysis>(
+                    route('cv-analyses.status', analysis.id),
+                );
+                consecutiveFailures.current = 0;
+                setAnalysis(data);
+            } catch {
+                consecutiveFailures.current += 1;
+
+                // A single blip (brief network hiccup) shouldn't
+                // interrupt the wait screen - only stop polling and let
+                // the user know (hallazgo de una auditoría de código: sin
+                // esto, un fallo de red aquí se quedaba sin capturar y el
+                // usuario veía el spinner para siempre, sin aviso ni
+                // forma de reintentar) once a handful of failures keep
+                // happening in a row.
+                if (consecutiveFailures.current >= 3) {
+                    setPollError(true);
+                }
+            }
         }, 1500);
 
         return () => clearInterval(interval);
-    }, [analysis.status, analysis.id]);
+    }, [analysis.status, analysis.id, pollError]);
+
+    function retryStatusCheck() {
+        consecutiveFailures.current = 0;
+        setPollError(false);
+    }
 
     return (
         <>
@@ -68,22 +95,41 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                     </div>
 
                     {(analysis.status === 'pending' ||
-                        analysis.status === 'processing') && (
-                        <div
-                            role="status"
-                            aria-live="polite"
-                            className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white py-24 text-center dark:border-slate-800 dark:bg-slate-900/60"
-                        >
+                        analysis.status === 'processing') &&
+                        !pollError && (
                             <div
-                                aria-hidden="true"
-                                className="h-10 w-10 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-500 dark:border-slate-700 dark:border-t-emerald-400"
-                            />
-                            <p className="mt-6 font-medium text-slate-800 dark:text-slate-200">
-                                {t.analyzing(analysis.original_filename)}
+                                role="status"
+                                aria-live="polite"
+                                className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white py-24 text-center dark:border-slate-800 dark:bg-slate-900/60"
+                            >
+                                <div
+                                    aria-hidden="true"
+                                    className="h-10 w-10 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-500 dark:border-slate-700 dark:border-t-emerald-400"
+                                />
+                                <p className="mt-6 font-medium text-slate-800 dark:text-slate-200">
+                                    {t.analyzing(analysis.original_filename)}
+                                </p>
+                                <p className="mt-1 text-sm text-slate-500">
+                                    {t.analyzingSubtext}
+                                </p>
+                            </div>
+                        )}
+
+                    {pollError && (
+                        <div
+                            role="alert"
+                            className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center dark:border-red-900/50 dark:bg-red-950/30"
+                        >
+                            <p className="font-medium text-red-700 dark:text-red-300">
+                                {t.statusCheckError}
                             </p>
-                            <p className="mt-1 text-sm text-slate-500">
-                                {t.analyzingSubtext}
-                            </p>
+                            <button
+                                type="button"
+                                onClick={retryStatusCheck}
+                                className="mt-4 inline-block rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:focus-visible:ring-offset-red-950"
+                            >
+                                {t.retry}
+                            </button>
                         </div>
                     )}
 
