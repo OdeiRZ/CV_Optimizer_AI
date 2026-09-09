@@ -161,14 +161,18 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
   fondo antes de fusionarlo (suite completa + navegación real en el navegador,
   subida → resultado, con las props del servidor actualizándose correctamente) porque
   es una actualización de major que toca el render de cada página. Se deja sin
-  fusionar deliberadamente: `react-dom`/`@types/react-dom` a v19 (mientras `react`
-  sigue en v18 — mezclar majors entre ambos rompe en runtime, requiere una migración a
-  React 19 coordinada), `typescript` 5.9 → 7.0.2 (`typescript-eslint` solo soporta
-  TypeScript `<6.1.0` todavía), `laravel-vite-plugin` 2 → 3 (exige `vite@^8`, y el
-  proyecto sigue en `vite@7`), y las imágenes base de Docker `php` 8.3 → 8.5 y `node`
+  fusionar deliberadamente: `typescript` 5.9 → 7.0.2 (`typescript-eslint` solo soporta
+  TypeScript `<6.1.0` todavía), y las imágenes base de Docker `php` 8.3 → 8.5 y `node`
   20 → 25 (no hay Docker disponible para probar el build localmente, ni ningún paso
   de CI que construya la imagen — es la que sirve producción en vivo, así que no se
   fusiona sin poder verificarla).
+- `react`/`react-dom` 18 → 19 (junto con `@types/react`/`@types/react-dom`), coordinado
+  en el mismo commit con `vite` 7 → 8, `@vitejs/plugin-react` 4 → 6 y `laravel-vite-plugin`
+  2 → 3 (que exige `vite@^8`, y `@vitejs/plugin-react@4.x` tampoco soporta `vite@8`) para
+  no dejar `react`/`react-dom` en majors distintos, el problema que la entrada anterior de
+  este mismo changelog daba como motivo para no fusionarlos todavía. Verificado con la
+  suite Pest completa, ESLint, el build de producción, el script de e2e
+  (`scripts/e2e-smoke.mjs`) y el chequeo de accesibilidad (`scripts/a11y-check.mjs`).
 
 ### Corregido
 
