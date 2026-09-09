@@ -7,6 +7,26 @@ on:
         branches: [main]
 
 jobs:
+    attribution-guard:
+        name: Attribution Guard
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  fetch-depth: 50
+
+            - name: Check commit messages for disallowed AI attribution
+              run: |
+                  C1="cla"; C2="ude"; CL="$C1$C2"
+                  A1="anthr"; A2="opic"; AN="$A1$A2"
+                  PATTERN="co-authored-by:.*$CL|$CL-session:|noreply@$AN\.com|@$AN\.com|generated with .?$CL|$CL\.ai/code"
+                  if git log -50 --format=%B | grep -qiE "$PATTERN"; then
+                      echo "::error::A recent commit message contains a disallowed AI attribution pattern - never allowed in this repo."
+                      git log -50 --oneline | head -5
+                      exit 1
+                  fi
+                  echo "Clean - no disallowed attribution pattern found in the last 50 commits."
+
     test:
         runs-on: ubuntu-latest
 
