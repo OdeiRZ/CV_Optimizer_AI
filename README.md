@@ -33,7 +33,7 @@ Analizador y optimizador de CVs con IA: sube tu currículum (y opcionalmente la 
 
 ## Tecnologías
 
-- Laravel 12 + Inertia.js + React 18 + TypeScript
+- Laravel 12 + Inertia.js + React 19 + TypeScript
 - Tailwind CSS v4
 - [Prism PHP](https://prismphp.com/) para la integración con el LLM (Anthropic Claude por defecto, proveedor intercambiable vía configuración)
 - `smalot/pdfparser` y `phpoffice/phpword` para extraer texto de PDF y DOCX
