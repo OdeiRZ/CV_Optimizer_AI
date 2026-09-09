@@ -36,6 +36,22 @@ test('reset password screen can be rendered', function () {
     });
 });
 
+test('forgot-password is throttled after 6 attempts per minute', function () {
+    // hallazgo de una auditoría de código: unthrottled, this endpoint's
+    // differentiated response (success message for a registered email vs
+    // a validation error for an unregistered one, per
+    // PasswordResetLinkController) let anyone enumerate registered
+    // accounts at whatever rate they liked - a non-existent email is
+    // enough to exercise the throttle without sending any real
+    // notification.
+    foreach (range(1, 6) as $i) {
+        $this->post('/forgot-password', ['email' => 'nobody@example.com']);
+    }
+
+    $this->post('/forgot-password', ['email' => 'nobody@example.com'])
+        ->assertTooManyRequests();
+});
+
 test('password can be reset with valid token', function () {
     Notification::fake();
 
