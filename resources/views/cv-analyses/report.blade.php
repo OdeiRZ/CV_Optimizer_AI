@@ -110,7 +110,7 @@
     <h1>{{ $isEnglish ? 'CV Analysis Report' : 'Informe de análisis de CV' }}</h1>
     <p class="subtitle">
         {{ $analysis->original_filename }} ·
-        {{ $isEnglish ? 'generated on' : 'generado el' }} {{ now()->format('d/m/Y H:i') }}
+        {{ $isEnglish ? 'generated on '.now()->utc()->format('d/m/Y H:i').' UTC' : 'generado el '.now()->timezone('Europe/Madrid')->format('d/m/Y H:i') }}
     </p>
 
     <div class="score-box">
@@ -122,7 +122,7 @@
     </div>
 
     <h2>{{ $isEnglish ? 'Feedback by section' : 'Feedback por sección' }}</h2>
-    @foreach ($result['sections'] as $section)
+    @foreach (collect($result['sections'])->sortBy(fn ($section) => ['critico' => 0, 'mejorable' => 1, 'ok' => 2][$section['severity']] ?? 3)->values() as $section)
         <div class="section">
             <span class="section-name">{{ $section['name'] }}</span>
             <span class="badge badge-{{ $section['severity'] }}">

@@ -81,7 +81,9 @@ class CvAnalysisController extends Controller
             'result' => $cvAnalysis->result,
         ]);
 
-        return $pdf->download("analisis-cv-{$cvAnalysis->id}.pdf");
+        $prefix = $cvAnalysis->language === CvAnalysisLanguage::English ? 'cv-analysis' : 'analisis-cv';
+
+        return $pdf->download("{$prefix}-{$cvAnalysis->id}.pdf");
     }
 
     /**

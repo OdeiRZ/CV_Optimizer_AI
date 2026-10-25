@@ -7,7 +7,6 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,8 +24,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Vite::prefetch(concurrency: 3);
-
         $this->warnIfDebugModeInProduction();
 
         // Public demo hitting a paid LLM API: cap analyses per user/IP per day.
@@ -41,9 +38,12 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perDay($limit)
                 ->by(CvAnalysisRateLimiter::key($request))
                 ->response(function (Request $request, array $headers) use ($limit) {
-                    return back()->withErrors([
-                        'cv' => "Has alcanzado el límite de {$limit} análisis diarios. Inténtalo de nuevo mañana.",
-                    ])->withHeaders($headers);
+                    // En el idioma del formulario, como el resto de errores del upload.
+                    $message = $request->input('language') === 'en'
+                        ? "You have reached the limit of {$limit} analyses per day. Try again tomorrow."
+                        : "Has alcanzado el límite de {$limit} análisis diarios. Inténtalo de nuevo mañana.";
+
+                    return back()->withErrors(['cv' => $message])->withHeaders($headers);
                 });
         });
 

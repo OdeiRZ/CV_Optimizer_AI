@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\CvAnalysisLanguage;
 use App\Jobs\AnalyzeCvJob;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Illuminate\Http\Client\ConnectionException;
@@ -41,6 +42,17 @@ it('gives a specific, non-retry message for a RuntimeException (always from CvTe
 
     expect($message)->toContain('texto')
         ->and($message)->not->toContain('Inténtalo de nuevo');
+});
+
+it('words the failure message in the language of the analysis', function () {
+    $english = CvAnalysisLanguage::English;
+
+    expect(AnalyzeCvJob::errorMessageFor(new RuntimeException('x'), $english))
+        ->toContain('No text could be read')
+        ->and(AnalyzeCvJob::errorMessageFor(new ConnectionException('timed out'), $english))
+        ->toContain('Try again in a few minutes')
+        ->and(AnalyzeCvJob::errorMessageFor(new ConnectionException('timed out'), CvAnalysisLanguage::Spanish))
+        ->toContain('Inténtalo de nuevo');
 });
 
 it('gives the generic retry message for anything that is not a RuntimeException', function () {

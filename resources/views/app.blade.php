@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+{{-- El idioma de la interfaz lo elige el visitante (guardado en su navegador),
+     no el servidor: arranca en español y lib/i18n.ts lo actualiza al cambiarlo.
+     Con el idioma de Laravel ("en") la página decía estar en inglés aunque se
+     viera en español. --}}
+<html lang="es">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,9 +19,18 @@
             // never flashes the wrong theme. Dark is the default look of the
             // app, so an unset preference stays dark rather than following
             // prefers-color-scheme.
-            if (localStorage.getItem('cv-optimizer-theme') !== 'light') {
+            // En try/catch: con el almacenamiento bloqueado (navegación
+            // privada estricta, cookies desactivadas) localStorage lanza y,
+            // sin esto, la página se quedaba en blanco. Sin acceso, oscuro.
+            var theme = null;
+            try { theme = localStorage.getItem('cv-optimizer-theme'); } catch (e) {}
+            if (theme !== 'light') {
                 document.documentElement.classList.add('dark');
             }
+            try {
+                var language = localStorage.getItem('cv-optimizer-language');
+                if (language === 'en') { document.documentElement.lang = 'en'; }
+            } catch (e) {}
         </script>
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>

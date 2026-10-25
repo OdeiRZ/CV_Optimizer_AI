@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\CvAnalysisLanguage;
 use App\Enums\CvAnalysisStatus;
 use App\Models\CvAnalysis;
 use App\Services\CvAnalysisSchema;
@@ -118,7 +119,7 @@ class AnalyzeCvJob implements ShouldQueue
             if (! $willRetry) {
                 $this->analysis->update([
                     'status' => CvAnalysisStatus::Failed,
-                    'error_message' => static::errorMessageFor($e),
+                    'error_message' => static::errorMessageFor($e, $this->analysis->language),
                 ]);
             }
 
@@ -138,13 +139,21 @@ class AnalyzeCvJob implements ShouldQueue
      * for the transient failures (timeouts, 5xx, rate limits) that
      * message actually fits.
      */
-    public static function errorMessageFor(Throwable $e): string
+    public static function errorMessageFor(Throwable $e, CvAnalysisLanguage $language = CvAnalysisLanguage::Spanish): string
     {
+        // En el idioma del análisis: antes salían siempre en español, también
+        // para quien había pedido el análisis en inglés.
+        $english = $language === CvAnalysisLanguage::English;
+
         if ($e instanceof RuntimeException) {
-            return 'No se ha podido leer texto de este CV. Puede que sea una imagen escaneada sin texto, o el archivo esté dañado - prueba con otro archivo.';
+            return $english
+                ? 'No text could be read from this CV. It may be a scanned image without text, or the file may be damaged - try another file.'
+                : 'No se ha podido leer texto de este CV. Puede que sea una imagen escaneada sin texto, o el archivo esté dañado - prueba con otro archivo.';
         }
 
-        return 'No se ha podido analizar el CV. Inténtalo de nuevo en unos minutos.';
+        return $english
+            ? 'The CV could not be analyzed. Try again in a few minutes.'
+            : 'No se ha podido analizar el CV. Inténtalo de nuevo en unos minutos.';
     }
 
     /**

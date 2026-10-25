@@ -54,6 +54,26 @@ it('rejects files that are not pdf or docx', function () {
     $response->assertSessionHasErrors('cv');
 });
 
+it('answers validation errors in the language the form asked for, never in Laravel\'s English default', function () {
+    Storage::fake('local');
+
+    $this->post(route('cv-analyses.store'), ['language' => 'es'])
+        ->assertSessionHasErrors(['cv' => 'Elige un CV para analizar.']);
+
+    $this->post(route('cv-analyses.store'), ['language' => 'en'])
+        ->assertSessionHasErrors(['cv' => 'Choose a CV to analyze.']);
+
+    $this->post(route('cv-analyses.store'), [
+        'cv' => UploadedFile::fake()->create('cv.txt', 10, 'text/plain'),
+        'language' => 'en',
+    ])->assertSessionHasErrors(['cv' => 'The CV must be a PDF or DOCX file.']);
+
+    $this->post(route('cv-analyses.store'), [
+        'cv' => fakeCvUpload(),
+        'job_description' => str_repeat('a', 10001),
+    ])->assertSessionHasErrors(['job_description' => 'La oferta es demasiado larga: el límite es de 10.000 caracteres.']);
+});
+
 it('stores the upload and dispatches the analysis job', function () {
     Storage::fake('local');
     Bus::fake();
@@ -140,6 +160,21 @@ it('shows a friendly session error instead of a raw 429 once the daily limit is 
 
     $response->assertSessionHasErrors('cv');
     Bus::assertDispatchedTimes(AnalyzeCvJob::class, 10);
+});
+
+it('words the daily limit message in the language of the form', function () {
+    Storage::fake('local');
+    Bus::fake();
+
+    foreach (range(1, 10) as $_) {
+        $this->post(route('cv-analyses.store'), ['cv' => fakeCvUpload()])->assertRedirect();
+    }
+
+    $this->post(route('cv-analyses.store'), ['cv' => fakeCvUpload(), 'language' => 'en'])
+        ->assertSessionHasErrors(['cv' => 'You have reached the limit of 10 analyses per day. Try again tomorrow.']);
+
+    $this->post(route('cv-analyses.store'), ['cv' => fakeCvUpload(), 'language' => 'es'])
+        ->assertSessionHasErrors(['cv' => 'Has alcanzado el límite de 10 análisis diarios. Inténtalo de nuevo mañana.']);
 });
 
 it('rate-limits by the Cloudflare connecting IP even when the resolved request IP is unstable', function () {
@@ -722,5 +757,30 @@ it('downloads an english pdf report when the analysis language is english', func
 
     $this->get(route('cv-analyses.report', $analysis))
         ->assertOk()
-        ->assertHeader('Content-Type', 'application/pdf');
+        ->assertHeader('Content-Type', 'application/pdf')
+        // El nombre del archivo también va en el idioma del análisis.
+        ->assertDownload("cv-analysis-{$analysis->id}.pdf");
+});
+
+it('names a spanish pdf report in spanish', function () {
+    $analysis = CvAnalysis::create([
+        'original_filename' => 'cv.pdf',
+        'file_path' => 'cv-uploads/fake.pdf',
+        'status' => CvAnalysisStatus::Completed,
+        'language' => CvAnalysisLanguage::Spanish,
+        'result' => [
+            'score' => 80,
+            'summary' => 'CV sólido.',
+            'sections' => [
+                ['name' => 'Formato', 'severity' => 'ok', 'feedback' => 'Clara.'],
+                ['name' => 'Experiencia', 'severity' => 'critico', 'feedback' => 'Sin métricas.'],
+            ],
+            'missing_keywords' => [],
+            'bullet_rewrites' => [],
+        ],
+    ]);
+
+    $this->get(route('cv-analyses.report', $analysis))
+        ->assertOk()
+        ->assertDownload("analisis-cv-{$analysis->id}.pdf");
 });
