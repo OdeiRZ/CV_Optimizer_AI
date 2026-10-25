@@ -7,6 +7,66 @@ proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### Lavado de cara y correcciones de idioma, accesibilidad y caché
+
+- **Subida con ficha de archivo y contador.** Al elegir un CV se ve una tarjeta con su
+  tipo, su tamaño y un botón "Cambiar" (antes solo el nombre en verde y ninguna forma
+  de quitarlo). La oferta tiene un contador de caracteres con el límite que manda el
+  servidor (10.000); si se pasa, se pone en rojo y no deja enviar. Un archivo que no es
+  PDF ni DOCX se rechaza ya al soltarlo (el `accept` del `<input>` solo filtraba el
+  selector, y los demás se colaban hasta el servidor). La cuota dice "Te queda 1 de 10
+  análisis hoy" en singular y, a cero, deshabilita el botón con un mensaje en vez de
+  subir el CV entero para que el servidor lo rechace.
+- **Espera del análisis en dos pasos reales**: "CV subido ✓" y "Analizando con IA…" con un
+  contador, y a los 15 s un aviso de que va más lento de lo normal (puede llegar al
+  minuto con reintentos; el texto fijo "suele tardar unos segundos" no cambiaba nunca).
+  El aviso de no cerrar la pestaña pasa de ámbar a texto neutro, y la barra de carga de
+  Inertia a verde. La misma espera sirve a la página de resultados mientras está
+  pendiente (`AnalysisProgress`).
+- **Resultados**: la puntuación lleva su rango escrito ("Mejorable · 50–79") para no
+  depender solo del color (WCAG 1.4.1); el feedback por sección va ordenado por gravedad,
+  con un recuento ("1 crítico · 1 mejorable · 1 correcto") y un icono por nivel (el PDF
+  usa el mismo orden); cada reescritura muestra Antes y Después lado a lado, sin
+  tachado, con un botón "Copiar"; las palabras clave ausentes llevan su recuento, una
+  frase que explica de dónde salen, chips discontinuos con "+" y "Copiar lista". Copiar
+  avisa con "No se ha podido copiar" si el navegador lo impide (antes el fallo era
+  silencioso).
+- **Figtree servida con la app** (`@fontsource-variable/figtree`, 20 KB en latín) en vez
+  de desde `fonts.bunny.net`, que solo traía los pesos 400–600: el titular y la
+  puntuación usan 700 y el navegador lo fabricaba. La CSP pierde `fonts.bunny.net` de
+  `style-src` y `font-src`. Cifras tabulares en el contador, la cuota, el tamaño y la
+  puntuación.
+- **Corregido: textos en el idioma equivocado.** Los errores de validación salían en
+  inglés de Laravel ("The cv field is required.", "must not be greater than 10000
+  characters") porque la app no tiene `lang/`: `StoreCvAnalysisRequest` tiene ahora sus
+  mensajes en español e inglés, según el idioma del formulario. El error de un análisis
+  fallido y el aviso del límite diario salían siempre en español, también en inglés. El
+  botón de tema se anunciaba solo en inglés. `<html lang>` decía `en` en una página en
+  español; ahora arranca en `es` y sigue al idioma elegido.
+- **Corregido: el informe PDF** se llamaba `analisis-cv-…` también en inglés (ahora
+  `cv-analysis-…`) y ponía la hora en UTC sin decirlo (ahora hora de Madrid en español y
+  "UTC" explícito en inglés).
+- **Corregido: contraste.** Varios textos no llegaban a 4,5:1 (la cuota 2,6:1, el motivo
+  de cada reescritura 2,5:1 en oscuro, la nota de privacidad, el aviso de no cerrar, el
+  nombre del archivo y "Probar con un CV de ejemplo" 3,7:1 en claro). Comprobado con
+  axe en claro y oscuro, español e inglés, con un fondo sólido (axe da el contraste
+  como "incompleto" sobre el degradado de la página).
+- **Corregido: la página de resultados no tenía `<h1>`** (axe `page-has-heading-one`).
+- **Corregido: el chequeo de accesibilidad de la CI revisaba un 404.** `id` no es
+  asignable en masa en `CvAnalysis`, así que el `updateOrCreate` del análisis de prueba
+  creaba la fila con un id aleatorio y la segunda URL de axe y Lighthouse no existía.
+  La siembra va ahora `unguarded()` y con una sección de cada gravedad. Fue lo que
+  ocultó los dos puntos anteriores.
+- **Corregido: `localStorage` bloqueado dejaba la página en blanco.** El script de tema
+  del `<head>`, `lib/theme.ts` y `lib/i18n.ts` lo leían o escribían sin `try/catch`.
+- **Rendimiento**: `Vite::prefetch` descargaba en cada visita unos 29 KB (79 KB sin
+  comprimir) de las páginas de login, registro y perfil, que nadie abre desde la app; se
+  quita. Los estáticos se servían sin ninguna cabecera de caché y `app.js` (126 KB
+  comprimido) se volvía a bajar entero en cada carga: `server.php` (el router que
+  `php artisan serve` usa si existe) los sirve ahora con `Cache-Control` (un año e
+  `immutable` los de `/build/assets`, una hora el resto), `ETag` y respuesta 304, sin
+  salir de `public/`.
+
 ### Añadido
 
 - Comando `php artisan cv-analyses:prune --days=30` (a diario vía `routes/console.php`)

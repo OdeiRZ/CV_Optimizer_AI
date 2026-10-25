@@ -11,20 +11,20 @@ Analizador y optimizador de CVs con IA: sube tu currículum (y opcionalmente la 
 
 ## Características
 
-- Subida de CV por drag & drop (PDF o DOCX, máx. 5 MB, validado en el propio navegador antes de enviarlo) con extracción de texto automática. Botón "Probar con un CV de ejemplo" para quien quiera ver el resultado sin subir un CV propio, y enlace para ver ese mismo CV de ejemplo antes de usarlo.
-- Análisis por IA con salida estructurada: puntuación 0-100 (mostrada como gauge circular con color según el rango), resumen, feedback por sección (formato, experiencia, palabras clave) con nivel de severidad.
+- Subida de CV por drag & drop (PDF o DOCX, máx. 5 MB, validado en el propio navegador antes de enviarlo, tipo incluido) con extracción de texto automática. El archivo elegido se ve como una ficha con su tipo y tamaño y un botón "Cambiar"; la oferta tiene un contador de caracteres con el límite del servidor (10.000). Botón "Probar con un CV de ejemplo" para quien quiera ver el resultado sin subir un CV propio, y enlace para ver ese mismo CV de ejemplo antes de usarlo.
+- Análisis por IA con salida estructurada: puntuación 0-100 (mostrada como gauge circular con color y con el rango escrito, "Mejorable · 50–79"), resumen, feedback por sección (formato, experiencia, palabras clave) con nivel de severidad, ordenado por gravedad y con un recuento.
 - Coincidencia opcional contra una oferta de trabajo: detecta palabras clave importantes ausentes en el CV.
-- Reescritura de las líneas de experiencia más débiles del CV (voz pasiva o sin métricas) a una versión más fuerte, con justificación de cada cambio.
+- Reescritura de las líneas de experiencia más débiles del CV (voz pasiva o sin métricas) a una versión más fuerte, con justificación de cada cambio; se ve el antes y el después lado a lado, y cada versión nueva se puede copiar.
 - Informe descargable en PDF con el resultado completo del análisis.
 - Vista previa embebida del CV original (solo PDF) en la página de resultado, para poder comparar el feedback con el formato real del documento; con una altura menor en pantallas pequeñas para no ocupar toda la vista en móvil.
 - Funciona con CVs en cualquier idioma (probado en español e inglés); interfaz y feedback disponibles en español o inglés (selector en la página de subida).
 - Selector de tema claro/oscuro (oscuro por defecto), con la preferencia guardada en el navegador.
 - Procesamiento síncrono en producción (`QUEUE_CONNECTION=sync`) para no depender de un worker persistente en hosting gratuito; procesamiento asíncrono en cola con polling en desarrollo local (`QUEUE_CONNECTION=database`).
 - Límite de uso diario por usuario/IP en el endpoint que llama al LLM, para controlar el coste de una demo pública. La página de subida muestra cuántos análisis quedan disponibles hoy, en vez de que el límite se descubra solo al toparse con él.
-- Pantalla de espera durante la subida y el análisis (con aviso de no cerrar la pestaña), ya que en producción el análisis se ejecuta dentro de la misma petición y puede tardar varios segundos.
+- Pantalla de espera en dos pasos (CV subido, análisis con IA) con un contador y un aviso a los 15 s de que va más lento de lo normal, además del de no cerrar la pestaña, ya que en producción el análisis se ejecuta dentro de la misma petición y puede tardar varios segundos.
 - Reintento automático (con backoff) ante fallos transitorios de la API del LLM: timeouts de conexión, 5xx o 429, sin reintentar en errores 4xx que fallarían igual dos veces.
 - Caché de resultado (20 min) para no facturar dos veces un reenvío accidental del mismo CV y oferta por la misma persona (doble clic, recarga). Ver [Seguridad](#seguridad) para cómo evita que ese caché mezcle resultados entre visitantes distintos.
-- Botón "Copiar enlace" en la página de resultado para compartir el análisis fácilmente.
+- Botón "Copiar enlace" en la página de resultado para compartir el análisis fácilmente (y avisa si el navegador no deja copiar).
 - Meta tags Open Graph / Twitter Card para que el enlace se vea bien al compartirlo (LinkedIn, Slack, etc.).
 - Accesibilidad: la zona de subida es navegable y activable por teclado, los estados de carga y error se anuncian a lectores de pantalla (`role="status"`/`role="alert"`), todos los controles interactivos tienen un foco visible, el contenido principal de cada página vive en un landmark `<main>`, y un enlace "Saltar al contenido" (visible solo al recibir foco) evita tener que tabular por el selector de idioma y el tema en cada visita.
 - Sección "Cómo funciona el análisis" en la página de subida, explicando en tres puntos los mismos criterios que evalúa realmente el prompt del LLM (formato/ATS, impacto cuantificado, palabras clave), para generar confianza antes de subir un CV propio.
@@ -101,10 +101,11 @@ La suite mockea el proveedor LLM (`Prism::fake()`), por lo que no realiza llamad
 
 ## Despliegue
 
-La demo en vivo corre en el plan gratuito de [Render](https://render.com) mediante el `Dockerfile` incluido (build multi-stage: `composer:2` → `node:20-alpine` → `php:8.3-cli-alpine`, sirviendo con `php artisan serve` en vez de php-fpm + nginx para mantenerlo en un único contenedor). Notas si quieres replicar el despliegue:
+La demo en vivo corre en el plan gratuito de [Render](https://render.com) mediante el `Dockerfile` incluido (build multi-stage: `composer:2` → `node:26-alpine` → `php:8.5-cli-alpine`, sirviendo con `php artisan serve` en vez de php-fpm + nginx para mantenerlo en un único contenedor). Notas si quieres replicar el despliegue:
 
 - El tier gratuito de Render no soporta *Background Workers*, así que producción usa `QUEUE_CONNECTION=sync` (el análisis se ejecuta en el propio request, sin cola) en vez del `database` + `queue:work` de desarrollo.
 - `php artisan serve` usa un único worker por defecto (`PHP_CLI_SERVER_WORKERS=1`), es decir, una sola petición HTTP en vuelo a la vez. Combinado con `QUEUE_CONNECTION=sync`, eso significaba que mientras se procesaba un análisis (varios segundos, más con los reintentos) **todo el sitio quedaba bloqueado** para cualquier otro visitante, incluso para cargar la portada. El Dockerfile fija `PHP_CLI_SERVER_WORKERS=4` y añade `--no-reload` (imprescindible para que Laravel respete esa variable) para permitir varias peticiones simultáneas.
+- Los archivos estáticos se sirven desde `server.php` (el router que `php artisan serve` usa si existe, ver `ServeCommand`): el servidor integrado de PHP los entregaba sin ninguna cabecera de caché y `app.js` (126 KB comprimido) se volvía a descargar entero en cada carga. Ahora `/build/assets/*` (nombre con hash) lleva `Cache-Control: public, max-age=31536000, immutable`, el resto de estáticos `max-age=3600`, y todos `ETag`/`Last-Modified` con respuesta `304`. Se entregan solo archivos dentro de `public/` (las rutas con `..` dan 404) y los `.php` no se sirven como texto. Lo prueba `StaticFileCacheTest` arrancando un servidor PHP real.
 - Esa misma concurrencia añadida hace más probable que dos peticiones escriban en SQLite casi a la vez; `DB_BUSY_TIMEOUT` (por defecto 5000 ms, en `config/database.php`) hace que una escritura espere brevemente al `lock` en vez de fallar al instante con "database is locked".
 - Producción usa `DB_CONNECTION=sqlite` en lugar de un Postgres/MySQL gestionado: el Postgres gratuito de Render caduca a los 30 días y se borra si no se pasa a un plan de pago, mientras que SQLite vive en el propio contenedor sin fecha de expiración. El `entrypoint.sh` crea el fichero `database.sqlite` si no existe antes de migrar. Contrapartida: al ser el filesystem del contenedor efímero, el histórico de análisis y las sesiones se reinician en cada redeploy o reinicio — aceptable para una demo pública (y mejor para la privacidad, al no acumular indefinidamente los CVs subidos por terceros).
 - Como Render termina TLS en su proxy y reenvía por HTTP plano al contenedor, es imprescindible `$middleware->trustProxies(at: '*')` en `bootstrap/app.php`; sin esto, Laravel genera URLs de assets en `http://` bajo una página `https://` y el navegador las bloquea.
@@ -115,7 +116,7 @@ La demo en vivo corre en el plan gratuito de [Render](https://render.com) median
 
 ## Seguridad
 
-- Content-Security-Policy en producción (no en `local`, para no romper el HMR de Vite): `script-src` restringido a `'self'` más un nonce por petición que cubre tanto el script de tema anti-FOUC como las etiquetas que genera Vite/Ziggy; sin `unsafe-inline` para scripts. `style-src` sí permite `unsafe-inline` (solo se usa para el ancho de la barra de progreso, que no puede ejecutar JS) además de `fonts.bunny.net`.
+- Content-Security-Policy en producción (no en `local`, para no romper el HMR de Vite): `script-src` restringido a `'self'` más un nonce por petición que cubre tanto el script de tema anti-FOUC como las etiquetas que genera Vite/Ziggy; sin `unsafe-inline` para scripts. `style-src` sí permite `unsafe-inline` (solo se usa para el ancho de la barra de progreso, que no puede ejecutar JS) y la fuente (Figtree, de Fontsource) se sirve desde el propio dominio, así que `font-src` es solo `'self'`.
 - El endpoint que dispara el análisis (llamada de pago al LLM) está limitado a 10 peticiones al día por usuario o IP (identificando la IP real vía Cloudflare, no vía `$request->ip()` — ver [Despliegue](#despliegue)). `CvAnalysisRateLimiter::clientIp()` descarta un valor de `CF-Connecting-IP` que no sea una IP válida, pero eso no verifica que la petición realmente haya pasado por Cloudflare: quien golpee la URL propia de Render directamente controla esa cabecera igualmente con un valor bien formado — hueco conocido, cerrarlo requeriría un paso en el propio Cloudflare (no hecho).
 - Los CVs subidos se guardan en almacenamiento privado (`storage/app/private`), no accesible directamente por URL de disco: tanto la descarga del informe como la vista previa del PDF pasan por rutas de la aplicación cuyo único control de acceso es el identificador ULID del análisis (igual que la propia página de resultado), no hay listados ni URLs predecibles.
 - La clave de la API del LLM se configura por variable de entorno, nunca en el código.
@@ -173,7 +174,7 @@ La demo en vivo corre en el plan gratuito de [Render](https://render.com) median
   ejecuta la suite y el build del frontend directamente en el runner, no dentro de la
   imagen — la única vez que el `Dockerfile` se construye de verdad es en el propio
   despliegue de Render. Por eso las actualizaciones de Dependabot de las imágenes base
-  (`php:8.3-cli-alpine`, `node:20-alpine`) se dejan sin fusionar hasta poder probarlas:
+  (hoy `php:8.5-cli-alpine` y `node:26-alpine`) conviene probarlas construyendo la imagen antes de fusionarlas:
   sin Docker en el entorno de desarrollo ni un paso de CI que las valide, fusionarlas
   a ciegas sería arriesgar la imagen que sirve producción sin ninguna red de
   seguridad.
