@@ -85,7 +85,10 @@ jobs:
                   mkdir -p storage/app/private/cv-uploads
                   cp public/samples/sample-cv.pdf storage/app/private/cv-uploads/browser-check.pdf
                   cat <<'PHP' | php artisan tinker
-                  App\Models\CvAnalysis::updateOrCreate(
+                  // unguarded(): `id` no es asignable en masa, y sin esto el
+                  // análisis se creaba con un id aleatorio: la segunda página
+                  // que revisan axe y Lighthouse era en realidad un 404.
+                  App\Models\CvAnalysis::unguarded(fn () => App\Models\CvAnalysis::updateOrCreate(
                       ['id' => '01ARZ3NDEKTSV4RRFFQ69G5FAV'],
                       [
                           'original_filename' => 'sample-cv.pdf',
@@ -94,12 +97,16 @@ jobs:
                           'result' => [
                               'score' => 72,
                               'summary' => 'Accessibility check fixture.',
-                              'sections' => [['name' => 'Format', 'severity' => 'ok', 'feedback' => 'Looks fine.']],
-                              'missing_keywords' => ['Docker'],
+                              'sections' => [
+                                  ['name' => 'Format', 'severity' => 'ok', 'feedback' => 'Looks fine.'],
+                                  ['name' => 'Experience', 'severity' => 'critico', 'feedback' => 'No metrics.'],
+                                  ['name' => 'Keywords', 'severity' => 'mejorable', 'feedback' => 'Some are missing.'],
+                              ],
+                              'missing_keywords' => ['Docker', 'CI/CD'],
                               'bullet_rewrites' => [['original' => 'Before', 'improved' => 'After', 'reason' => 'Why']],
                           ],
                       ]
-                  );
+                  ));
                   PHP
 
             # PHP_CLI_SERVER_WORKERS + --no-reload: php artisan serve defaults
