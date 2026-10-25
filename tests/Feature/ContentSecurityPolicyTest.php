@@ -18,6 +18,13 @@ it('sends a Content-Security-Policy header with a script nonce', function () {
     $response->assertSee("nonce=\"{$nonce}\"", false);
 });
 
+it('only allows fonts and styles from its own origin, since the font ships with the app', function () {
+    $csp = $this->get('/')->headers->get('Content-Security-Policy');
+
+    expect($csp)->toContain("font-src 'self';")
+        ->and($csp)->not->toContain('bunny.net');
+});
+
 it('does not send a Content-Security-Policy header in local development', function () {
     app()->detectEnvironment(fn () => 'local');
 

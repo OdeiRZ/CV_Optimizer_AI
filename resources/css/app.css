@@ -4,5 +4,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-    --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+    /* Figtree variable, servida con la app (ver app.tsx): trae todos los
+       pesos, también el 700 de los titulares, que con los tres pesos de
+       bunny.net (400-600) el navegador fabricaba. */
+    --font-sans: "Figtree Variable", "Figtree", ui-sans-serif, system-ui, sans-serif;
 }

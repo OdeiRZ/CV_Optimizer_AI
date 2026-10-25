@@ -37,8 +37,8 @@ class AddContentSecurityPolicy
             // Inline `style` attributes are only ever used for the upload
             // progress bar's width - not worth a nonce dance for something
             // that can't execute JS, so it's just allowed outright.
-            "style-src 'self' 'unsafe-inline' https://fonts.bunny.net",
-            "font-src 'self' https://fonts.bunny.net",
+            "style-src 'self' 'unsafe-inline'",
+            "font-src 'self'",
             "img-src 'self' data:",
             "connect-src 'self'",
             "frame-src 'self'",

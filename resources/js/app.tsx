@@ -1,3 +1,4 @@
+import '@fontsource-variable/figtree';
 import '../css/app.css';
 import './bootstrap';
 
@@ -20,6 +21,7 @@ createInertiaApp({
         root.render(<App {...props} />);
     },
     progress: {
-        color: '#4B5563',
+        // Emerald, el color de la marca (antes un gris que no decía nada).
+        color: '#10b981',
     },
 });
