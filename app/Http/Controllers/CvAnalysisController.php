@@ -26,6 +26,7 @@ class CvAnalysisController extends Controller
     {
         return Inertia::render('CvAnalyses/Create', [
             'maxUploadKb' => config('cv.max_upload_kb'),
+            'jobDescriptionMax' => StoreCvAnalysisRequest::JOB_DESCRIPTION_MAX,
             'dailyLimit' => config('cv.daily_analysis_limit'),
             'remainingToday' => CvAnalysisRateLimiter::remaining($request),
         ]);

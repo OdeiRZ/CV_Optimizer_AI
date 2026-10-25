@@ -20,7 +20,15 @@ export function useTheme() {
 
     useEffect(() => {
         document.documentElement.classList.toggle('dark', theme === 'dark');
-        window.localStorage.setItem(STORAGE_KEY, theme);
+
+        // En try/catch: con el almacenamiento bloqueado lanza, y sin esto
+        // la página se quedaba en blanco. El tema vale entonces solo para
+        // esta visita.
+        try {
+            window.localStorage.setItem(STORAGE_KEY, theme);
+        } catch {
+            // nada que hacer
+        }
     }, [theme]);
 
     const toggleTheme = () => {

@@ -1,16 +1,29 @@
 import { FormEventHandler, useEffect, useRef, useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
+import AnalysisProgress from '@/Components/AnalysisProgress';
 import ThemeToggle from '@/Components/ThemeToggle';
-import { useLanguage } from '@/lib/i18n';
+import { formatFileSize, formatNumber, useLanguage } from '@/lib/i18n';
 import { CvAnalysisLanguage } from '@/types/cv';
 
 interface CreateProps {
     maxUploadKb: number;
+    jobDescriptionMax: number;
     dailyLimit: number;
     remainingToday: number;
 }
 
-export default function Create({ maxUploadKb, dailyLimit, remainingToday }: CreateProps) {
+const ACCEPTED_EXTENSIONS = ['pdf', 'docx'];
+
+function fileExtension(name: string): string {
+    return name.split('.').pop()?.toLowerCase() ?? '';
+}
+
+export default function Create({
+    maxUploadKb,
+    jobDescriptionMax,
+    dailyLimit,
+    remainingToday,
+}: CreateProps) {
     const { language, setLanguage, t } = useLanguage();
     const maxUploadMb = Math.round(maxUploadKb / 1024);
     const maxUploadBytes = maxUploadKb * 1024;
@@ -30,6 +43,13 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
     const [loadingSample, setLoadingSample] = useState(false);
     const [submitError, setSubmitError] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Sin análisis que gastar, enviar solo subiría el CV entero para que el
+    // servidor lo rechace (el límite diario se cuenta en el servidor).
+    const quotaExhausted = remainingToday <= 0;
+    const jobDescriptionLength = data.job_description.length;
+    const jobDescriptionTooLong = jobDescriptionLength > jobDescriptionMax;
+    const canSubmit = data.cv !== null && !quotaExhausted && !jobDescriptionTooLong;
 
     // This Inertia version (2.x, see package.json) has no per-visit
     // onNetworkError option - only a later major adds one. The
@@ -110,6 +130,14 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
             return;
         }
 
+        // El <input accept> solo filtra el selector de archivos: arrastrar
+        // cualquier otro tipo se colaba hasta el servidor.
+        if (!ACCEPTED_EXTENSIONS.includes(fileExtension(file.name))) {
+            setError('cv', t.invalidFileType);
+            setData('cv', null);
+            return;
+        }
+
         clearErrors('cv');
         setData('cv', file);
     };
@@ -131,6 +159,9 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
             setLoadingSample(false);
         }
     };
+
+    const uploadPercent =
+        progress && (progress.percentage ?? 100) < 100 ? (progress.percentage ?? 0) : null;
 
     return (
         <>
@@ -156,18 +187,21 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
                                     className={`rounded-md px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 ${
                                         language === option
                                             ? 'bg-emerald-500 text-slate-950'
-                                            : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                                            : 'text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
                                     }`}
                                 >
                                     {option === 'es' ? 'Español' : 'English'}
                                 </button>
                             ))}
                         </div>
-                        <ThemeToggle />
+                        <ThemeToggle
+                            toLightLabel={t.themeToLight}
+                            toDarkLabel={t.themeToDark}
+                        />
                     </div>
 
                     <header className="mb-12 text-center">
-                        <p className="mb-3 inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                        <p className="mb-3 inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-400">
                             {t.badge}
                         </p>
                         <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl dark:text-white">
@@ -176,8 +210,10 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
                         <p className="mx-auto mt-4 max-w-xl text-slate-600 dark:text-slate-400">
                             {t.subheading}
                         </p>
-                        <p className="mt-3 text-xs text-slate-400 dark:text-slate-600">
-                            {t.remainingToday(remainingToday, dailyLimit)}
+                        <p className="mt-3 text-xs tabular-nums text-slate-600 dark:text-slate-400">
+                            {quotaExhausted
+                                ? t.quotaExhausted
+                                : t.remainingToday(remainingToday, dailyLimit)}
                         </p>
                     </header>
 
@@ -191,94 +227,116 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
                     )}
 
                     {processing ? (
-                        <div
-                            role="status"
-                            aria-live="polite"
-                            className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-8 py-24 text-center shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-black/20"
-                        >
-                            <div
-                                aria-hidden="true"
-                                className="h-10 w-10 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-500 dark:border-slate-700 dark:border-t-emerald-400"
-                            />
-                            <p className="mt-6 font-medium text-slate-800 dark:text-slate-200">
-                                {progress && (progress.percentage ?? 100) < 100
-                                    ? t.submitting
-                                    : t.analyzing(data.cv?.name ?? '')}
-                            </p>
-                            <p className="mt-1 text-sm text-slate-500">
-                                {t.analyzingSubtext}
-                            </p>
-                            {progress && (progress.percentage ?? 100) < 100 && (
-                                <div className="mt-4 h-2 w-56 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                                    <div
-                                        className="h-full bg-emerald-500 transition-all"
-                                        style={{ width: `${progress.percentage}%` }}
-                                    />
-                                </div>
-                            )}
-                            <p className="mt-6 text-xs font-medium text-amber-600 dark:text-amber-400">
-                                {t.analyzingWarning}
-                            </p>
-                        </div>
+                        <AnalysisProgress
+                            analyzingLabel={t.analyzing(data.cv?.name ?? '')}
+                            sizeLabel={
+                                data.cv ? formatFileSize(data.cv.size, language) : undefined
+                            }
+                            uploadPercent={uploadPercent}
+                            uploadingLabel={t.stepUploading}
+                            uploadedLabel={t.stepUploaded}
+                            analyzingStepLabel={t.stepAnalyzing}
+                            slowNotice={t.slowNotice}
+                            closeWarning={t.closeWarning}
+                        />
                     ) : (
                     <form
                         onSubmit={submit}
                         className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-2xl dark:shadow-black/20"
                     >
-                        <div
-                            role="button"
-                            tabIndex={0}
-                            aria-label={data.cv ? data.cv.name : t.dropzoneHint}
-                            onDragOver={(e) => {
-                                e.preventDefault();
-                                setIsDragging(true);
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".pdf,.docx"
+                            tabIndex={-1}
+                            aria-hidden="true"
+                            className="hidden"
+                            onChange={(e) => {
+                                handleFiles(e.target.files);
+                                // Para poder elegir el mismo archivo otra vez.
+                                e.target.value = '';
                             }}
-                            onDragLeave={() => setIsDragging(false)}
-                            onDrop={(e) => {
-                                e.preventDefault();
-                                setIsDragging(false);
-                                handleFiles(e.dataTransfer.files);
-                            }}
-                            onClick={() => fileInputRef.current?.click()}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    e.preventDefault();
-                                    fileInputRef.current?.click();
-                                }
-                            }}
-                            className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
-                                isDragging
-                                    ? 'border-emerald-400 bg-emerald-400/5'
-                                    : 'border-slate-300 hover:border-slate-400 dark:border-slate-700 dark:hover:border-slate-600'
-                            }`}
-                        >
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept=".pdf,.docx"
-                                tabIndex={-1}
-                                aria-hidden="true"
-                                className="hidden"
-                                onChange={(e) => handleFiles(e.target.files)}
-                            />
+                        />
 
-                            {data.cv ? (
-                                <p className="font-medium text-emerald-600 dark:text-emerald-400">
-                                    {data.cv.name}
+                        {data.cv ? (
+                            <div
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    setIsDragging(true);
+                                }}
+                                onDragLeave={() => setIsDragging(false)}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    setIsDragging(false);
+                                    handleFiles(e.dataTransfer.files);
+                                }}
+                                className={`flex items-center gap-4 rounded-xl border px-4 py-4 transition ${
+                                    isDragging
+                                        ? 'border-emerald-400 bg-emerald-400/5'
+                                        : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/40'
+                                }`}
+                            >
+                                <span
+                                    aria-hidden="true"
+                                    className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-emerald-100 text-xs font-bold text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-400"
+                                >
+                                    {fileExtension(data.cv.name) === 'docx' ? 'DOCX' : 'PDF'}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate font-semibold text-slate-900 dark:text-slate-100">
+                                        {data.cv.name}
+                                    </p>
+                                    <p className="text-sm tabular-nums text-slate-600 dark:text-slate-400">
+                                        {fileExtension(data.cv.name) === 'docx' ? 'DOCX' : 'PDF'} ·{' '}
+                                        {formatFileSize(data.cv.size, language)}
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800 dark:focus-visible:ring-offset-slate-900"
+                                >
+                                    {t.changeFile}
+                                </button>
+                            </div>
+                        ) : (
+                            <div
+                                role="button"
+                                tabIndex={0}
+                                aria-label={t.dropzoneHint}
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    setIsDragging(true);
+                                }}
+                                onDragLeave={() => setIsDragging(false)}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    setIsDragging(false);
+                                    handleFiles(e.dataTransfer.files);
+                                }}
+                                onClick={() => fileInputRef.current?.click()}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        fileInputRef.current?.click();
+                                    }
+                                }}
+                                className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
+                                    isDragging
+                                        ? 'border-emerald-400 bg-emerald-400/5'
+                                        : 'border-slate-300 hover:border-slate-400 dark:border-slate-700 dark:hover:border-slate-600'
+                                }`}
+                            >
+                                <p className="font-medium text-slate-800 dark:text-slate-200">
+                                    {t.dropzoneHint}
                                 </p>
-                            ) : (
-                                <>
-                                    <p className="font-medium text-slate-800 dark:text-slate-200">
-                                        {t.dropzoneHint}
-                                    </p>
-                                    <p className="mt-1 text-sm text-slate-500">
-                                        {t.dropzoneSubHint(maxUploadMb)}
-                                    </p>
-                                </>
-                            )}
-                        </div>
+                                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                                    {t.dropzoneSubHint(maxUploadMb)}
+                                </p>
+                            </div>
+                        )}
                         {errors.cv && (
-                            <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
+                            <p role="alert" className="mt-2 text-sm text-red-700 dark:text-red-400">
                                 {errors.cv}
                             </p>
                         )}
@@ -288,7 +346,7 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
                                 type="button"
                                 onClick={loadSample}
                                 disabled={loadingSample}
-                                className="rounded text-sm font-medium text-emerald-600 hover:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:hover:text-emerald-300 dark:focus-visible:ring-offset-slate-900"
+                                className="rounded text-sm font-medium text-emerald-700 hover:text-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:hover:text-emerald-300 dark:focus-visible:ring-offset-slate-900"
                             >
                                 {t.trySample}
                             </button>
@@ -296,7 +354,7 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
                                 href="/samples/sample-cv.pdf"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="rounded text-sm font-medium text-slate-500 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:text-slate-400 dark:hover:text-slate-200 dark:focus-visible:ring-offset-slate-900"
+                                className="rounded text-sm font-medium text-slate-600 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:text-slate-400 dark:hover:text-slate-200 dark:focus-visible:ring-offset-slate-900"
                             >
                                 {t.viewSample}
                             </a>
@@ -317,10 +375,31 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
                                     setData('job_description', e.target.value)
                                 }
                                 placeholder={t.jobDescriptionPlaceholder}
-                                className="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-100 dark:placeholder:text-slate-600"
+                                aria-describedby="job_description_count"
+                                className="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-900 placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-100 dark:placeholder:text-slate-400"
                             />
+                            <p
+                                id="job_description_count"
+                                className={`mt-1 text-right text-xs tabular-nums ${
+                                    jobDescriptionTooLong
+                                        ? 'font-medium text-red-700 dark:text-red-400'
+                                        : 'text-slate-600 dark:text-slate-400'
+                                }`}
+                            >
+                                {t.jobDescriptionCount(
+                                    formatNumber(jobDescriptionLength, language),
+                                    formatNumber(jobDescriptionMax, language),
+                                )}
+                            </p>
+                            {jobDescriptionTooLong && (
+                                <p role="alert" className="mt-1 text-sm text-red-700 dark:text-red-400">
+                                    {t.jobDescriptionTooLong(
+                                        formatNumber(jobDescriptionMax, language),
+                                    )}
+                                </p>
+                            )}
                             {errors.job_description && (
-                                <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
+                                <p role="alert" className="mt-2 text-sm text-red-700 dark:text-red-400">
                                     {errors.job_description}
                                 </p>
                             )}
@@ -328,7 +407,7 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
 
                         <button
                             type="submit"
-                            disabled={!data.cv}
+                            disabled={!canSubmit}
                             className="mt-8 w-full rounded-lg bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 dark:focus-visible:ring-offset-slate-900"
                         >
                             {t.submit}
@@ -336,12 +415,12 @@ export default function Create({ maxUploadKb, dailyLimit, remainingToday }: Crea
                     </form>
                     )}
 
-                    <p className="mt-8 text-center text-xs text-slate-500 dark:text-slate-600">
+                    <p className="mt-8 text-center text-xs text-slate-600 dark:text-slate-400">
                         {t.privacyNote}
                     </p>
 
                     <div className="mt-16">
-                        <h2 className="text-center text-sm font-semibold uppercase tracking-wider text-slate-500">
+                        <h2 className="text-center text-sm font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                             {t.howItWorksHeading}
                         </h2>
                         <div className="mt-6 grid gap-4 sm:grid-cols-3">

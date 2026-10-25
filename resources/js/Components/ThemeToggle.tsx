@@ -1,6 +1,12 @@
 import { useTheme } from '@/lib/theme';
 
-export default function ThemeToggle() {
+interface ThemeToggleProps {
+    /** Lo que anuncia el lector de pantalla, en el idioma de la página. */
+    toLightLabel: string;
+    toDarkLabel: string;
+}
+
+export default function ThemeToggle({ toLightLabel, toDarkLabel }: ThemeToggleProps) {
     const { theme, toggleTheme } = useTheme();
     const isDark = theme === 'dark';
 
@@ -8,12 +14,12 @@ export default function ThemeToggle() {
         <button
             type="button"
             onClick={toggleTheme}
-            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={isDark ? toLightLabel : toDarkLabel}
             className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400 dark:hover:text-slate-200 dark:focus-visible:ring-offset-slate-950"
         >
             {/* Icon shows the mode a click leads to, not the current one -
             matches the aria-label above (e.g. in dark mode the label reads
-            "Switch to light mode", so the icon shown is the sun, not the
+            "switch to light mode", so the icon shown is the sun, not the
             moon). */}
             {isDark ? (
                 <svg

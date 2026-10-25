@@ -1,35 +1,34 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import axios from 'axios';
+import AnalysisProgress from '@/Components/AnalysisProgress';
+import CopyButton from '@/Components/CopyButton';
 import ScoreGauge from '@/Components/ScoreGauge';
 import ThemeToggle from '@/Components/ThemeToggle';
 import { useLanguage } from '@/lib/i18n';
+import { severityIcon, severityOrder, severityStyles } from '@/lib/severity';
 import { CvAnalysis, CvAnalysisSeverity } from '@/types/cv';
 
-const severityStyles: Record<CvAnalysisSeverity, string> = {
-    critico: 'bg-red-50 text-red-700 ring-red-200 dark:bg-red-500/10 dark:text-red-400 dark:ring-red-500/30',
-    mejorable:
-        'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30',
-    ok: 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30',
-};
+const severities: CvAnalysisSeverity[] = ['critico', 'mejorable', 'ok'];
+
+const headingClass =
+    'text-sm font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400';
 
 export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
     const [analysis, setAnalysis] = useState(initial);
     const { t } = useLanguage(initial.language);
-    const [linkCopied, setLinkCopied] = useState(false);
     const [pollError, setPollError] = useState(false);
     const consecutiveFailures = useRef(0);
 
-    const copyLink = async () => {
-        try {
-            await navigator.clipboard.writeText(window.location.href);
-            setLinkCopied(true);
-            setTimeout(() => setLinkCopied(false), 2000);
-        } catch {
-            // Clipboard access can fail (permissions, non-secure context);
-            // the URL is still visible in the address bar as a fallback.
-        }
-    };
+    // Lo que más pesa, primero. Se ordena aquí y no se toca lo guardado:
+    // el informe en PDF aplica el mismo orden por su lado.
+    const sections = useMemo(
+        () =>
+            [...(analysis.result?.sections ?? [])].sort(
+                (a, b) => severityOrder[a.severity] - severityOrder[b.severity],
+            ),
+        [analysis.result],
+    );
 
     useEffect(() => {
         if (pollError) {
@@ -87,32 +86,34 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                     <div className="mb-8 flex items-center justify-between">
                         <Link
                             href={route('cv-analyses.create')}
-                            className="rounded text-sm text-slate-500 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:hover:text-slate-300 dark:focus-visible:ring-offset-slate-950"
+                            className="rounded text-sm text-slate-600 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:text-slate-400 dark:hover:text-slate-200 dark:focus-visible:ring-offset-slate-950"
                         >
                             {t.backLink}
                         </Link>
-                        <ThemeToggle />
+                        <ThemeToggle
+                            toLightLabel={t.themeToLight}
+                            toDarkLabel={t.themeToDark}
+                        />
                     </div>
+
+                    {/* La página no tenía ningún título de nivel 1 (axe: page-has-heading-one):
+                    el de la pestaña no cuenta para un lector de pantalla. */}
+                    <h1 className="sr-only">
+                        {t.headTitleShow} · {analysis.original_filename}
+                    </h1>
 
                     {(analysis.status === 'pending' ||
                         analysis.status === 'processing') &&
                         !pollError && (
-                            <div
-                                role="status"
-                                aria-live="polite"
-                                className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white py-24 text-center dark:border-slate-800 dark:bg-slate-900/60"
-                            >
-                                <div
-                                    aria-hidden="true"
-                                    className="h-10 w-10 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-500 dark:border-slate-700 dark:border-t-emerald-400"
-                                />
-                                <p className="mt-6 font-medium text-slate-800 dark:text-slate-200">
-                                    {t.analyzing(analysis.original_filename)}
-                                </p>
-                                <p className="mt-1 text-sm text-slate-500">
-                                    {t.analyzingSubtext}
-                                </p>
-                            </div>
+                            <AnalysisProgress
+                                analyzingLabel={t.analyzing(analysis.original_filename)}
+                                uploadPercent={null}
+                                uploadingLabel={t.stepUploading}
+                                uploadedLabel={t.stepUploaded}
+                                analyzingStepLabel={t.stepAnalyzing}
+                                slowNotice={t.slowNotice}
+                                closeWarning={t.closeWarning}
+                            />
                         )}
 
                     {pollError && (
@@ -153,7 +154,11 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                     {analysis.status === 'completed' && analysis.result && (
                         <div className="space-y-8">
                             <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900/60">
-                                <ScoreGauge score={analysis.result.score} label={t.scoreLabel} />
+                                <ScoreGauge
+                                    score={analysis.result.score}
+                                    label={t.scoreLabel}
+                                    rangeLabels={t.scoreRange}
+                                />
                                 <p className="mt-4 max-w-xl text-slate-700 dark:text-slate-300">
                                     {analysis.result.summary}
                                 </p>
@@ -164,21 +169,18 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                                     >
                                         {t.downloadPdf}
                                     </a>
-                                    <button
-                                        type="button"
-                                        onClick={copyLink}
-                                        aria-live="polite"
-                                        className="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800 dark:focus-visible:ring-offset-slate-900"
-                                    >
-                                        {linkCopied ? t.linkCopied : t.copyLink}
-                                    </button>
+                                    <CopyButton
+                                        text={window.location.href}
+                                        label={t.copyLink}
+                                        copiedLabel={t.linkCopied}
+                                        failedLabel={t.copyFailed}
+                                        className="px-4 py-2"
+                                    />
                                 </div>
                             </div>
 
                             <div className="space-y-3">
-                                <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-                                    {t.cvPreviewHeading}
-                                </h2>
+                                <h2 className={headingClass}>{t.cvPreviewHeading}</h2>
                                 {analysis.is_pdf ? (
                                     <iframe
                                         src={route('cv-analyses.file', analysis.id)}
@@ -186,23 +188,45 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
                                         className="h-[380px] w-full rounded-xl border border-slate-200 sm:h-[600px] dark:border-slate-800"
                                     />
                                 ) : (
-                                    <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900/60">
+                                    <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
                                         {t.cvPreviewUnavailable}
                                     </p>
                                 )}
                             </div>
 
                             <div className="space-y-3">
-                                <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-                                    {t.sectionsHeading}
-                                </h2>
-                                {analysis.result.sections.map((section) => (
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <h2 className={headingClass}>{t.sectionsHeading}</h2>
+                                    <div className="flex flex-wrap gap-2">
+                                        {severities.map((severity) => {
+                                            const count = sections.filter(
+                                                (section) => section.severity === severity,
+                                            ).length;
+
+                                            return count > 0 ? (
+                                                <span
+                                                    key={severity}
+                                                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium tabular-nums ring-1 ring-inset ${severityStyles[severity]}`}
+                                                >
+                                                    {t.sectionCount(severity, count)}
+                                                </span>
+                                            ) : null;
+                                        })}
+                                    </div>
+                                </div>
+                                {sections.map((section) => (
                                     <div
                                         key={section.name}
                                         className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/60"
                                     >
                                         <div className="mb-2 flex items-center justify-between gap-3">
-                                            <h3 className="font-medium text-slate-900 dark:text-slate-100">
+                                            <h3 className="flex items-center gap-2 font-medium text-slate-900 dark:text-slate-100">
+                                                <span
+                                                    aria-hidden="true"
+                                                    className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-xs font-bold ring-1 ring-inset ${severityStyles[section.severity]}`}
+                                                >
+                                                    {severityIcon[section.severity]}
+                                                </span>
                                                 {section.name}
                                             </h3>
                                             <span
@@ -220,44 +244,83 @@ export default function Show({ analysis: initial }: { analysis: CvAnalysis }) {
 
                             {analysis.result.missing_keywords.length > 0 && (
                                 <div className="space-y-3">
-                                    <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-                                        {t.missingKeywordsHeading}
-                                    </h2>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <h2 className={headingClass}>
+                                            {t.missingKeywordsHeading}{' '}
+                                            <span className="tabular-nums">
+                                                · {analysis.result.missing_keywords.length}
+                                            </span>
+                                        </h2>
+                                        <CopyButton
+                                            text={analysis.result.missing_keywords.join(', ')}
+                                            label={t.copyList}
+                                            copiedLabel={t.copied}
+                                            failedLabel={t.copyFailed}
+                                        />
+                                    </div>
+                                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                                        {t.keywordsHint}
+                                    </p>
+                                    <ul className="flex flex-wrap gap-2">
                                         {analysis.result.missing_keywords.map(
                                             (keyword) => (
-                                                <span
+                                                <li
                                                     key={keyword}
-                                                    className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                                                    className="rounded-full border border-dashed border-slate-400 px-3 py-1 text-sm text-slate-700 dark:border-slate-600 dark:text-slate-300"
                                                 >
+                                                    <span
+                                                        aria-hidden="true"
+                                                        className="mr-1 font-bold text-emerald-700 dark:text-emerald-400"
+                                                    >
+                                                        +
+                                                    </span>
                                                     {keyword}
-                                                </span>
+                                                </li>
                                             ),
                                         )}
-                                    </div>
+                                    </ul>
                                 </div>
                             )}
 
                             {analysis.result.bullet_rewrites.length > 0 && (
                                 <div className="space-y-3">
-                                    <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-                                        {t.rewritesHeading}
-                                    </h2>
+                                    <h2 className={headingClass}>{t.rewritesHeading}</h2>
                                     {analysis.result.bullet_rewrites.map(
                                         (rewrite, index) => (
                                             <div
                                                 key={index}
                                                 className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/60"
                                             >
-                                                <p className="text-sm text-slate-500 line-through decoration-red-500/50">
-                                                    {rewrite.original}
-                                                </p>
-                                                <p className="mt-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                                                    {rewrite.improved}
-                                                </p>
-                                                <p className="mt-2 text-xs text-slate-500 dark:text-slate-600">
-                                                    {rewrite.reason}
-                                                </p>
+                                                <div className="grid gap-3 sm:grid-cols-2">
+                                                    <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-950/40">
+                                                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                                                            {t.rewriteBefore}
+                                                        </p>
+                                                        <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+                                                            {rewrite.original}
+                                                        </p>
+                                                    </div>
+                                                    <div className="rounded-lg bg-emerald-50 p-3 dark:bg-emerald-500/10">
+                                                        <p className="text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
+                                                            {t.rewriteAfter}
+                                                        </p>
+                                                        <p className="mt-1 text-sm font-medium text-emerald-900 dark:text-emerald-200">
+                                                            {rewrite.improved}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-3 flex items-start justify-between gap-3">
+                                                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                                                        {rewrite.reason}
+                                                    </p>
+                                                    <CopyButton
+                                                        text={rewrite.improved}
+                                                        label={t.copy}
+                                                        copiedLabel={t.copied}
+                                                        failedLabel={t.copyFailed}
+                                                        className="shrink-0 !px-2.5 !py-1 text-xs"
+                                                    />
+                                                </div>
                                             </div>
                                         ),
                                     )}

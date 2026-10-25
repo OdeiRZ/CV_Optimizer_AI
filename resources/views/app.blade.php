@@ -51,9 +51,7 @@
         <meta name="twitter:title" content="{{ config('app.name', 'CV Optimizer AI') }} — Optimiza tu CV con IA">
         <meta name="twitter:description" content="Sube tu CV y recibe una puntuación tipo ATS, feedback accionable por secciones y reescrituras de tus puntos más débiles.">
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        {{-- La fuente (Figtree) va con la app: ver resources/js/app.tsx. --}}
 
         <!-- Scripts -->
         @routes(nonce: $cspNonce)

@@ -27,6 +27,11 @@ it('tells the frontend the configured upload size limit', function () {
         ->assertInertia(fn ($page) => $page->where('maxUploadKb', config('cv.max_upload_kb')));
 });
 
+it('tells the frontend the job posting length the server accepts, for its counter', function () {
+    $this->get(route('cv-analyses.create'))
+        ->assertInertia(fn ($page) => $page->where('jobDescriptionMax', 10000));
+});
+
 it('tells the frontend how many analyses are left today', function () {
     Storage::fake('local');
     Bus::fake();
